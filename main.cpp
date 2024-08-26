@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "parser.hpp"
+#include "netlist_parser.hpp"
 using namespace std;
 // Written by Ishaan, Harshraj, Atharva and Avaneesh
 
@@ -12,9 +12,6 @@ int main(int argc, char *argv[]) {
     char* filepath = argv[1]; // File path for netlist
     cout<<"Parsing the netlist"<<endl;
 
-    VerilogParser parser;
-    parser.parseFile("simple_circuit.v"); // Replace with your actual netlist filename
-    parser.display();
 
     return 0;
 

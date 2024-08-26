@@ -95,4 +95,16 @@ public:
     }
 };
 
+// Buffer gate
+class op_buf : public operation {
+public:
+    std::vector<bool> operator()(std::vector<bool> input_) const override {
+        if (input_.size() != 1) {
+            std::cerr << "Input vector of BUF gate must have exactly 1 input" << std::endl;
+            exit(1);
+        }
+        return std::vector<bool>{input_[0]};
+    }
+};
+
 #endif // OPERATION_HPP
