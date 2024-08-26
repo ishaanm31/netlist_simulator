@@ -1,0 +1,11 @@
+module simple_circuit (
+output out1,
+input in1, in2, in3
+);
+wire w1, w2;
+
+// Gates
+and u1 (w1,in1,in2) ;
+or  u2 (out1,w1,in3) ;
+
+endmodule
