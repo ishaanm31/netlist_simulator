@@ -28,4 +28,48 @@ Follow these steps to build the Netlist Simulator:
    ```sh
    git clone https://github.com/yourusername/netlist-simulator.git
    cd netlist-simulator
-   
+   ```
+2. **Building the executable**
+    Create a build directory and use CMake to generate the necessary build files:
+    ```sh
+    cmake .
+    make
+   ```
+3. **Running the simulator**
+    ```sh
+    ./NetlistSimulator
+    ```
+## Examples
+An example netlist is given "netlist.txt" use it for testing
+A sample usage is given here
+
+```sh
+$ ./NetlistSimulator 
+Assignment 1 of VLSI CAD 2024! 
+Give filepath for the netlist.txt
+/home/ishaan/Study/VLSI_CAD/netlist.txt
+Parsing the netlist
+For exiting the loop enter Q
+Give input vector in the given format: for input A=0 B=1 C=0 write 010 in the command line
+Inputs for our netlist are:
+ A, B, C, 
+111
+Y --> 0
+For exiting the loop enter Q
+Give input vector in the given format: for input A=0 B=1 C=0 write 010 in the command line
+Inputs for our netlist are:
+ A, B, C, 
+110
+Y --> 0
+For exiting the loop enter Q
+Give input vector in the given format: for input A=0 B=1 C=0 write 010 in the command line
+Inputs for our netlist are:
+ A, B, C, 
+100
+Y --> 1
+For exiting the loop enter Q
+Give input vector in the given format: for input A=0 B=1 C=0 write 010 in the command line
+Inputs for our netlist are:
+ A, B, C, 
+q
+```
