@@ -3,12 +3,15 @@
 
 #include <iostream>
 #include <vector>
-#include <cstdlib> // For exit()
+#include <string>
+#include <unordered_map>
+#include <memory>
 
 // Interface for operation
 class operation {
 public:
     virtual std::vector<bool> operator()(std::vector<bool> input_) const = 0;
+    virtual ~operation() = default;  // Virtual destructor for proper cleanup
 };
 
 // AND gate
@@ -105,6 +108,48 @@ public:
         }
         return std::vector<bool>{input_[0]};
     }
+};
+
+// Singleton Manager for operation functors
+class OperationSingleton {
+public:
+    // Static method to get the singleton instance
+    static OperationSingleton& getInstance() {
+        static OperationSingleton instance;
+        return instance;
+    }
+
+    // Method to get a singleton instance of an operation functor by type
+    std::shared_ptr<operation> getOperation(const std::string& type) {
+        auto it = operations.find(type);
+        if (it != operations.end()) {
+            return it->second;
+        } else {
+            std::cerr << "Unknown operation type: " << type << std::endl;
+            return nullptr;
+        }
+    }
+
+    // Prevent copying and assignment
+    OperationSingleton(const OperationSingleton&) = delete;
+    OperationSingleton& operator=(const OperationSingleton&) = delete;
+
+private:
+    // Private constructor for singleton
+    OperationSingleton() {
+        // Initialize operator functors
+        operations["AND2"] = std::make_shared<op_and2>();
+        operations["OR2"] = std::make_shared<op_or2>();
+        operations["INV"] = std::make_shared<op_not>();
+        operations["NAND2"] = std::make_shared<op_nand2>();
+        operations["NOR2"] = std::make_shared<op_nor2>();
+        operations["XOR2"] = std::make_shared<op_xor2>();
+        operations["XNOR2"] = std::make_shared<op_xnor2>();
+        operations["BUF"] = std::make_shared<op_buf>();
+    }
+
+    // Map of operations, stored as shared_ptr to manage memory
+    std::unordered_map<std::string, std::shared_ptr<operation>> operations;
 };
 
 #endif // OPERATION_HPP

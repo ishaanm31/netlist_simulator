@@ -7,7 +7,7 @@ void netlist_parser::parse(const std::string& filename) {
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Unable to open file: " << filename << std::endl;
-        return;
+        exit(1);
     }
 
     std::string line;
@@ -89,9 +89,9 @@ void netlist_parser::processLine(const std::string& line) {
 // Helper function to parse signals (inputs, outputs, wires)
 void netlist_parser::parseSignals(const std::string& signalString, std::vector<std::string>& signalList) {
     std::stringstream ss(signalString);
-    std::string signal;
-    while (std::getline(ss, signal, ',')) {
-        signalList.push_back(trim(signal));
+    std::string wire;
+    while (std::getline(ss, wire, ',')) {
+        signalList.push_back(trim(wire));
     }
 }
 

@@ -28,10 +28,9 @@ public:
 
     // Function to display the parsed netlist
     void printParsedData() const;
-
-private:
     Netlist netlist;
-
+private:
+   
     // Function to process each line of the netlist
     void processLine(const std::string& line);
 
