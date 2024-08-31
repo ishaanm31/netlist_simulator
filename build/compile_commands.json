@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/harshraj/netlist_simulator/build",
+  "command": "/bin/c++   -I/home/harshraj/netlist_simulator   -Wall -Wextra -v -g   -std=gnu++17 -o CMakeFiles/NetlistSimulator.dir/main.cpp.o -c /home/harshraj/netlist_simulator/main.cpp",
+  "file": "/home/harshraj/netlist_simulator/main.cpp"
+},
+{
+  "directory": "/home/harshraj/netlist_simulator/build",
+  "command": "/bin/c++   -I/home/harshraj/netlist_simulator   -Wall -Wextra -v -g   -std=gnu++17 -o CMakeFiles/NetlistSimulator.dir/netlist_parser.cpp.o -c /home/harshraj/netlist_simulator/netlist_parser.cpp",
+  "file": "/home/harshraj/netlist_simulator/netlist_parser.cpp"
+},
+{
+  "directory": "/home/harshraj/netlist_simulator/build",
+  "command": "/bin/c++   -I/home/harshraj/netlist_simulator   -Wall -Wextra -v -g   -std=gnu++17 -o CMakeFiles/NetlistSimulator.dir/netlist.cpp.o -c /home/harshraj/netlist_simulator/netlist.cpp",
+  "file": "/home/harshraj/netlist_simulator/netlist.cpp"
+}
+]

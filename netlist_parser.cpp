@@ -57,31 +57,48 @@ void netlist_parser::printParsedData() const {
 
 // Function to process each line of the netlist
 void netlist_parser::processLine(const std::string& line) {
-    std::regex inputRegex(R"(^input\s+([\w\s,]+);$)");
-    std::regex outputRegex(R"(^output\s+([\w\s,]+);$)");
-    std::regex wireRegex(R"(^wire\s+([\w\s,]+);$)");
-    std::regex gateRegex(R"((\w+)\s+(\w+)\(([\w\s,]+)\);$)");
+
+    std::regex moduleRegex(R"(module\s+(\w+)\s*\()");
+    std::regex commentRegex(R"(//|\);)");
+    std::regex portRegex(R"((output|input)\s+([\w\s,]+);?)");
+    std::regex wireRegex(R"(wire\s+([\w\s,]+);)");
+    std::regex gateRegex(R"((\w+)\s+(\w+)\s*\(([\w\s,]+)\)\s*;)");
+    std::regex endmoduleRegex(R"(endmodule)");
 
     std::smatch match;
 
-    if (std::regex_search(line, match, inputRegex)) {
-        parseSignals(match[1].str(), netlist.inputs);
-    } else if (std::regex_search(line, match, outputRegex)) {
-        parseSignals(match[1].str(), netlist.outputs);
+    if (std::regex_search(line, match, portRegex)) {
+        if(match[1].str() == "input") {
+            parseSignals(match[2].str(), netlist.inputs);
+        } else if (match[1].str() == "output") {
+            parseSignals(match[2].str(), netlist.outputs);
+        }
     } else if (std::regex_search(line, match, wireRegex)) {
         parseSignals(match[1].str(), netlist.wires);
     } else if (std::regex_search(line, match, gateRegex)) {
         Gate gate;
-        gate.output = match[1].str();
-        gate.type = match[2].str();
-        std::string inputs = match[3].str();
-        std::stringstream ss(inputs);
-        std::string input;
-        while (std::getline(ss, input, ',')) {
-            gate.inputs.push_back(trim(input));
+        gate.type = match[1].str();
+        std::string connections = match[3].str();
+        std::istringstream connection_stream(connections);
+        std::string connection;
+        std::vector<std::string> connectionsList;
+        while (std::getline(connection_stream, connection, ',')) {
+            connectionsList.push_back(trim(connection));
+        }
+        gate.output = connectionsList[0];
+        for (size_t i = 1; i < connectionsList.size(); ++i) {
+            gate.inputs.push_back(connectionsList[i]);
         }
         netlist.gates.push_back(gate);
-    } else {
+
+    } else if (std::regex_search(line, match, moduleRegex)) {
+        std::cout << "Module Name: " << match[1].str() << std::endl;
+    } else if(std::regex_search(line, match, commentRegex)) {
+        // Skip comments
+    } else if(std::regex_search(line, match, endmoduleRegex)) {
+        std::cout << "End of Netlist. Parsing Complete" << std::endl;
+    }
+    else {
         std::cerr << "Unrecognized line format: " << line << std::endl;
     }
 }
