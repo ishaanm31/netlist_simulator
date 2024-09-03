@@ -1,1 +1,0 @@
-/bin/c++   -Wall -Wextra -v -g   CMakeFiles/NetlistSimulator.dir/main.cpp.o CMakeFiles/NetlistSimulator.dir/netlist_parser.cpp.o CMakeFiles/NetlistSimulator.dir/netlist.cpp.o  -o NetlistSimulator 
