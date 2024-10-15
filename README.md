@@ -1,5 +1,10 @@
 # Netlist Simulator
 
+- Ishaan Manhar, 210070033
+- Harshraj Chaudhari, 210040060
+- Atharva Kulkarni, 210070047
+- Avaanesh Sai, 210070015
+
 ## Overview
 
 The Netlist Simulator is a powerful tool designed for parsing and simulating digital circuits based on a netlist description. It consists of several core components:
