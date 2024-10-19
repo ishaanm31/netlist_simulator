@@ -7,7 +7,7 @@ using namespace std;
 // Written by Ishaan, Harshraj, Atharva and Avaneesh
 
 int main(){
-    cout<<"Assignment 1 of VLSI CAD 2024! \nGive filepath for the netlist.txt"<<endl;
+    cout<<"Assignment 2 of VLSI CAD 2024! \n Combinational Automatic Test Vector Generator using PODEM. \nGive filepath for the netlist.txt"<<endl;
     string filepath;
     cin>>filepath;
     cout<<"Parsing the netlist"<<endl;

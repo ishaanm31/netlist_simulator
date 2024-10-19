@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class node {
+class node { // Represents a gate
 private:
     int node_idx;
     std::vector<wire*> inputs;
@@ -32,9 +32,9 @@ public:
         int max_input_level = -1;
         for (auto inp: inputs) {
             // returns false if any input is uninitialized
-            if (inp->getValue() == -1)
+            if (inp->getFaultFreeValue() == -1)
                 return false;
-            input_vec.push_back(inp->getValue());
+            input_vec.push_back(inp->getFaultFreeValue());
             max_input_level = max(max_input_level, inp->getLevel());
         }
         vector<bool> output_vec = (*op)(input_vec);
@@ -46,7 +46,7 @@ public:
         level = 1 + max_input_level;
         // Initializing output signals
         for(long unsigned int i = 0; i < output_vec.size(); i++) {
-            outputs[i]->setValue(output_vec[i]);
+            outputs[i]->setFaultFreeValue(output_vec[i]);
             outputs[i]->setLevel(level);    
         }
         evaluated = true;
