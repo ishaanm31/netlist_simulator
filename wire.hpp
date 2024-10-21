@@ -2,79 +2,77 @@
 #define WIRE_HPP
 
 #include <string>
+#include "port.hpp"
+#include <bits/stdc++.h>
+using namespace std;
 
-enum _5_value_logic {
-    X = -1,
-    _0 = 0,
-    _1 = 1,
-    D,
-    D_bar,
-};
-
+// Connects output ports to the corresponding input ports
+// Call this wire to set ports of the gates
 class wire {
 private:
-    int fault_value, fault_free_value;
-    _5_value_logic D_value;
-    int level;
-    std::string name;
-
-    void eval_D_value(){
-        if (fault_free_value == fault_value)
-            D_value = (_5_value_logic)fault_free_value;
-        else if ((fault_value == -1) || (fault_free_value == -1))
-            D_value = X;
-        else if ((fault_free_value == 0) and (fault_value == 1))
-            D_value = D_bar;
-        else
-            D_value = D;
-        return;
-    }
-
+    output_port *driver_port;
+    vector<input_port*> driven_ports;
+    string name;
+    
 public:
-    // Constructor
-    wire(std::string name_) : fault_value(-1), fault_free_value(-1), 
-                            D_value(X), level(-1), name(name_) {}
+    wire(string _name):driver_port(NULL), name(_name){}
 
-    // Setter for value
-    void setFaultValue(int val) {
-        fault_value = val;
-        eval_D_value();
+    // Gets us the driver port of this wire. Can be only 
+    // connected to one output ports. So should be called only once
+    output_port *createDriverPort(node *driver_gate) {
+        if (driver_port != NULL) {
+            cerr<<"Tried to create driver port twice on wire: "<<name<<"\nExiting the system!";
+            exit(1);
+        }
+        driver_port = new output_port(driver_gate, this);
+        return driver_port;
+    }
+    output_port *getDriverPort() {
+        return driver_port;
     }
 
-    // Getter for value
-    int getFaultValue() const {
-        return fault_value;
+    // Creates input ports for the gate
+    input_port *createDrivenPort(node *driven_gate) {
+        input_port* ip_port = new input_port(driven_gate, this);
+        driven_ports.push_back(ip_port);
+        return ip_port;
     }
 
-    // Setter for value
-    void setFaultFreeValue(int val) {
-        fault_free_value = val;
-        eval_D_value();
+    // Everytime someone updates the value of the output port
+    // This function is called to update values of input ports
+    bool updateFaultFreeValue() {
+        bool change = false;
+        int val = driver_port->getFaultFreeValue();
+        for (auto x: driven_ports) {
+            change |= x->setFaultFreeValue(val);
+        }
+        return change;
     }
 
-    // Getter for value
-    int getFaultFreeValue() const {
-        return fault_free_value;
+    // Everytime someone updates the value of the output port
+    // This function is called to update values of input ports
+    bool updateFaultValue() {
+        bool change = false;
+        int val = driver_port->getFaultValue();
+        for (auto x: driven_ports) {
+            change |= x->setFaultValue(val);
+        }
+        return change;
     }
-
-    _5_value_logic getDvalue() {
-        return D_value;
+    bool updateLevel() {
+        bool change = false;
+        int level = driver_port->getLevel();
+        for (auto x: driven_ports) {
+            change |= x->setLevel(level);
+        }
+        return change;
     }
-
-    // Setter for level
-    void setLevel(int val) {
-        level = val;
-    }
-
-    // Getter for level
-    int getLevel() const {
-        return level;
-    }
-
-    // Getter for name
-    std::string getName() const {
-        return name;
+    vector<node*> getDependentGates() {
+        vector<node*> V;
+        for (auto inp: driven_ports) {
+            V.push_back(inp->getInputGate());
+        }
+        return V;
     }
 };
-
 #endif // WIRE_HPP

@@ -11,46 +11,54 @@ using namespace std;
 class node { // Represents a gate
 private:
     int node_idx;
-    std::vector<wire*> inputs;
-    std::vector<wire*> outputs;
+    std::vector<input_port*> inputs;
+    output_port* output;
     std::shared_ptr<operation> op;  // Changed to std::shared_ptr<operation>
     int level;
 public:
     bool evaluated;
     // Constructor
-    node(int idx, vector<wire*> inp, vector<wire*> out, std::shared_ptr<operation> op_):
-        node_idx(idx), inputs(inp), outputs(out), op(op_), evaluated(false) {}
-
+    node(int idx, vector<wire*> input_wires, wire* output_wire, string gate_type):
+        node_idx(idx), evaluated(false) {
+        
+        OperationSingleton& singleton = OperationSingleton::getInstance();
+        op = singleton.getOperation(gate_type); // Get an operation functor
+        for (auto input_wire: input_wires) {
+            inputs.push_back(input_wire->createDrivenPort(this));
+        }
+        output = output_wire->createDriverPort(this);
+    }
     int getIndex() {
         return node_idx;
     }
 
     // Evaluate outputs of the module/gate
-    // Return true if evaluation is successful
-    bool eval() {
-        vector<bool> input_vec;
-        int max_input_level = -1;
-        for (auto inp: inputs) {
-            // returns false if any input is uninitialized
-            if (inp->getFaultFreeValue() == -1)
-                return false;
-            input_vec.push_back(inp->getFaultFreeValue());
-            max_input_level = max(max_input_level, inp->getLevel());
+    // Return gates which need to be re-evaluated
+    vector<node*> eval() {
+        bool change = false;
+        // Fetching input vectors from input ports
+        vector<int> input_vec_f_free, input_vec_f;
+        for (auto input_port: inputs) {
+            int fault_free_value = input_port->getFaultFreeValue();
+            int fault_value = input_port->getFaultValue();
+            input_vec_f_free.push_back(fault_free_value);
+            input_vec_f.push_back(fault_value);
         }
-        vector<bool> output_vec = (*op)(input_vec);
-        // Error checking
-        if (output_vec.size() != outputs.size()) {
-            cerr << "Output vector error on node: " << node_idx << endl;
-            exit(1);
+        // Evaluating new output values and previous values
+        int new_f_free = (*op)(input_vec_f_free), new_f = (*op)(input_vec_f);
+        int prev_f_free = output->getFaultFreeValue(), prev_f = output->getFaultValue();
+
+        if (prev_f_free != new_f_free) {
+            change = true;
+            output->setFaultFreeValue(new_f_free); // Reflecting new value if changes
         }
-        level = 1 + max_input_level;
-        // Initializing output signals
-        for(long unsigned int i = 0; i < output_vec.size(); i++) {
-            outputs[i]->setFaultFreeValue(output_vec[i]);
-            outputs[i]->setLevel(level);    
+        if (prev_f != new_f) {
+            change = true;
+            output->setFaultValue(new_f); // Reflecting new value if changes
         }
-        evaluated = true;
-        return true;
+        if (!change)
+            return {};
+        return output->getDependentGates(); // Return dependent gates if there is a change
     }
 };
 
