@@ -1,8 +1,9 @@
 #ifndef PORT_HPP
 #define PORT_HPP
 
-#include <bits/stdc++.h>
-#include "node.hpp"
+#include <vector>
+class wire;
+class node;
 
 enum _5_value_logic {
     X = -1,
@@ -12,131 +13,75 @@ enum _5_value_logic {
     D_bar
 };
 
+// Base class for ports
 class port {
 protected:
     int fault_value, fault_free_value;
     _5_value_logic D_value;
     int level;
+    bool is_stuck;
 
-    void eval_D_value(){
-        if (fault_free_value == fault_value)
-            D_value = (_5_value_logic)fault_free_value;
-        else if ((fault_value == -1) || (fault_free_value == -1))
-            D_value = X;
-        else if ((fault_free_value == 0) and (fault_value == 1))
-            D_value = D_bar;
-        else
-            D_value = D;
-        return;
-    }
+    void eval_D_value();
 
 public:
-    // Constructor
-    port() : fault_value(-1), fault_free_value(-1), 
-                            D_value(X), level(-1) {}
+    // Add a virtual destructor to make the class polymorphic
+    virtual ~port() = default;
 
-    // Setter for value
-    bool setFaultValue(int val) {
-        if (fault_value == val)
-            return false;
-        fault_value = val;
-        eval_D_value();
-        return true;
-    }
+    port();
 
-    // Getter for value
-    int getFaultValue() const {
-        return fault_value;
-    }
-
-    // Setter for value
-    bool setFaultFreeValue(int val) {
-        if (fault_free_value == val)
-            return false;
-        fault_free_value = val;
-        eval_D_value();
-        return true;
-    }
-
-    // Getter for value
-    int getFaultFreeValue() const {
-        return fault_free_value;
-    }
-
-    _5_value_logic getDvalue() {
-        return D_value;
-    }
-
-    // Setter for level
-    bool setLevel(int val) {
-        if (val == level) return false;
-        level = val;
-        return true;
-    }
-
-    // Getter for level
-    int getLevel() const {
-        return level;
-    }
+    bool setFaultValue(int val);
+    void setStuckAtFault(int val);
+    void refresh();
+    int getFaultValue() const;
+    bool setFaultFreeValue(int val);
+    int getFaultFreeValue() const;
+    _5_value_logic getDvalue();
+    bool setLevel(int val);
+    int getLevel() const;
 };
 
-class output_port: public port {
+// Output port class
+class output_port : public port {
 protected:
-    node *driver_gate;
-    wire *driven_wire;
+    node* driver_gate;
+    wire* driven_wire;
+
 public:
-    output_port(node *_driver_gate, wire *_driven_wire): driver_gate(_driver_gate), driven_wire(_driven_wire) {}
-
-    node *getDriverGate() {
-        return driver_gate;
-    }
-
-    bool setFaultFreeValue(int val) {
-        if (fault_free_value == val)
-            return false;
-        fault_free_value = val;
-        eval_D_value();
-        driven_wire->updateFaultFreeValue();
-        return true;
-    }
-
-    bool setFaultValue(int val) {
-        if (fault_value == val)
-            return false;
-        fault_value = val;
-        eval_D_value();
-        driven_wire->updateFaultValue();
-        return true;
-    }
-
-    // Setter for level
-    bool setLevel(int val) {
-        bool change = (level !=val);
-        level = val;
-        change |= driven_wire->updateLevel();
-        return change;
-    }
-    
-    // Dependent gates
-    vector<node*> getDependentGates() {
-        return driven_wire->getDependentGates();
-    }
+    virtual ~output_port() = default;
+    output_port(node* _driver_gate, wire* _driven_wire);
+    node* getDriverGate();
+    bool setFaultFreeValue(int val);
+    bool setFaultValue(int val);
+    void setStuckAtFault(int val);
+    bool setLevel(int val);
+    std::vector<node*> getDependentGates();
 };
 
-class input_port: public port {
+// Input port class
+class input_port : public port {
 protected:
-    node *input_gate;
-    wire *driver_wire;
+    node* input_gate;
+    wire* driver_wire;
+
 public:
-    input_port(node *_g, wire *_w): input_gate(_g), driver_wire(_w) {}
+    virtual ~input_port() = default;
+    input_port(node* _g, wire* _w);
+    node* getInputGate();
+    wire* getDriverWire();
+};
 
-    node *getInputGate() {
-        return input_gate;
-    }
+// Primary input port class
+class primary_input_port : public output_port {
+public:
+    primary_input_port(wire* _w);
+    node* getDriverGate() = delete;
+};
 
-    wire * getDriverWire() {
-        return driver_wire;
-    }
+// Primary output port class
+class primary_output_port : public input_port {
+public:
+    primary_output_port(wire* _w);
+    node* getInputGate() = delete;
 };
 
 #endif // PORT_HPP

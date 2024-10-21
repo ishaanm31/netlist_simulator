@@ -2,64 +2,44 @@
 #define NODE_HPP
 
 #include <vector>
-#include <memory>  // For std::shared_ptr
+#include <memory>
+#include <string>
 #include "wire.hpp"
+#include "port.hpp"
 #include "operation.hpp"
 
-using namespace std;
+// Forward declarations
+class wire;
+class port;
+class output_port;
+class input_port;
+class primary_input_port;
+class primary_output_port;
+class operation;
 
-class node { // Represents a gate
+// Represents a gate
+class node {
 private:
     int node_idx;
     std::vector<input_port*> inputs;
     output_port* output;
-    std::shared_ptr<operation> op;  // Changed to std::shared_ptr<operation>
+    std::shared_ptr<operation> op;
     int level;
+
 public:
     bool evaluated;
+
     // Constructor
-    node(int idx, vector<wire*> input_wires, wire* output_wire, string gate_type):
-        node_idx(idx), evaluated(false) {
-        
-        OperationSingleton& singleton = OperationSingleton::getInstance();
-        op = singleton.getOperation(gate_type); // Get an operation functor
-        for (auto input_wire: input_wires) {
-            inputs.push_back(input_wire->createDrivenPort(this));
-        }
-        output = output_wire->createDriverPort(this);
-    }
-    int getIndex() {
-        return node_idx;
-    }
+    node(int idx, std::vector<wire*> input_wires, wire* output_wire, std::string gate_type);
 
-    // Evaluate outputs of the module/gate
-    // Return gates which need to be re-evaluated
-    vector<node*> eval() {
-        bool change = false;
-        // Fetching input vectors from input ports
-        vector<int> input_vec_f_free, input_vec_f;
-        for (auto input_port: inputs) {
-            int fault_free_value = input_port->getFaultFreeValue();
-            int fault_value = input_port->getFaultValue();
-            input_vec_f_free.push_back(fault_free_value);
-            input_vec_f.push_back(fault_value);
-        }
-        // Evaluating new output values and previous values
-        int new_f_free = (*op)(input_vec_f_free), new_f = (*op)(input_vec_f);
-        int prev_f_free = output->getFaultFreeValue(), prev_f = output->getFaultValue();
+    // Getter for node index
+    int getIndex();
 
-        if (prev_f_free != new_f_free) {
-            change = true;
-            output->setFaultFreeValue(new_f_free); // Reflecting new value if changes
-        }
-        if (prev_f != new_f) {
-            change = true;
-            output->setFaultValue(new_f); // Reflecting new value if changes
-        }
-        if (!change)
-            return {};
-        return output->getDependentGates(); // Return dependent gates if there is a change
-    }
+    // Evaluate outputs of the module/gate, return gates which need to be re-evaluated
+    std::vector<node*> eval();
+
+    // Evaluate the level of the gate, return gates which need to be re-evaluated
+    std::vector<node*> evalLevel();
 };
 
 #endif // NODE_HPP

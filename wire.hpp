@@ -2,77 +2,52 @@
 #define WIRE_HPP
 
 #include <string>
-#include "port.hpp"
-#include <bits/stdc++.h>
+#include <vector>
+
 using namespace std;
 
+// Forward declarations to avoid circular dependencies
+class port;
+class output_port;
+class input_port;
+class primary_input_port;
+class primary_output_port;
+class node;
+
 // Connects output ports to the corresponding input ports
-// Call this wire to set ports of the gates
 class wire {
 private:
     output_port *driver_port;
     vector<input_port*> driven_ports;
     string name;
-    
-public:
-    wire(string _name):driver_port(NULL), name(_name){}
 
-    // Gets us the driver port of this wire. Can be only 
-    // connected to one output ports. So should be called only once
-    output_port *createDriverPort(node *driver_gate) {
-        if (driver_port != NULL) {
-            cerr<<"Tried to create driver port twice on wire: "<<name<<"\nExiting the system!";
-            exit(1);
-        }
-        driver_port = new output_port(driver_gate, this);
-        return driver_port;
-    }
-    output_port *getDriverPort() {
-        return driver_port;
-    }
+public:
+    // Constructor
+    wire(string _name);
+
+    // Gets us the driver port of this wire. Can only be connected to one output port
+    output_port *createDriverPort(node *driver_gate);
+
+    // Gets us the driver port of this wire. Used for creating primary input
+    primary_input_port *createDriverPort();
+
+    output_port *getDriverPort();
 
     // Creates input ports for the gate
-    input_port *createDrivenPort(node *driven_gate) {
-        input_port* ip_port = new input_port(driven_gate, this);
-        driven_ports.push_back(ip_port);
-        return ip_port;
-    }
+    input_port *createDrivenPort(node *driven_gate);
 
-    // Everytime someone updates the value of the output port
-    // This function is called to update values of input ports
-    bool updateFaultFreeValue() {
-        bool change = false;
-        int val = driver_port->getFaultFreeValue();
-        for (auto x: driven_ports) {
-            change |= x->setFaultFreeValue(val);
-        }
-        return change;
-    }
+    // Creates primary output ports
+    primary_output_port *createDrivenPort();
 
-    // Everytime someone updates the value of the output port
-    // This function is called to update values of input ports
-    bool updateFaultValue() {
-        bool change = false;
-        int val = driver_port->getFaultValue();
-        for (auto x: driven_ports) {
-            change |= x->setFaultValue(val);
-        }
-        return change;
-    }
-    bool updateLevel() {
-        bool change = false;
-        int level = driver_port->getLevel();
-        for (auto x: driven_ports) {
-            change |= x->setLevel(level);
-        }
-        return change;
-    }
-    vector<node*> getDependentGates() {
-        vector<node*> V;
-        for (auto inp: driven_ports) {
-            V.push_back(inp->getInputGate());
-        }
-        return V;
-    }
+    // Every time someone updates the value of the output port, this function updates values of input ports
+    bool updateFaultFreeValue();
+
+    // Every time someone updates the value of the output port, this function updates values of input ports
+    bool updateFaultValue();
+
+    bool updateLevel();
+
+    vector<node*> getDependentGates();
 };
+
 #endif // WIRE_HPP
