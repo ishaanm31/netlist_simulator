@@ -48,7 +48,7 @@ public:
     // Get test vector for testing all the Stuck at Faults
     map<string, vector<int>> comb_atpg();
 
-    vector<int> generateTestVector();
+    vector<int> generateTestVector(port* stuck_port);
 
     // Destructor to clean up allocated resources
     ~netlist();

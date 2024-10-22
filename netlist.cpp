@@ -137,21 +137,41 @@ map<string, vector<int>> netlist::comb_atpg() {
         s.append("|SA0");
         this->refresh();
         p.second->setStuckAtFault(0);
-        TestVectors[s] = generateTestVector();
+        TestVectors[s] = generateTestVector(p.second);
         s = p.first;
         s.append("|SA1");
         this->refresh();
         p.second->setStuckAtFault(1);
-        TestVectors[s] = generateTestVector();
+        TestVectors[s] = generateTestVector(p.second);
     }
     return TestVectors;
 }
 
 // PODEM algorithm to generate a test vector
-vector<int> netlist::generateTestVector() {
-    if (X_path_check()) {
-        pair<port*, int> objective = getObjective()
+vector<int> netlist::generateTestVector(port* stuck_port) {
+    while(1){
+    if (X_path_check()) {   // return true if following
+        /*
+            All gate output of the chosen path must have X values  Called X-PATH
+             If more than one X-path to choose,  chose shortest X-path to PO
+             If X-path disappear,  backtrack
+        */
+        pair<port*, int> objective = getObjective(); //  getObjective() can return null
+        // call backtrace()
+
     }
+    else {
+        // todo: make a stack for decisons at PI: PI name, value, bool is_flipped
+        // call bool all_assignmnents_tried(stack). ... i.e. is_flipped of all is 1
+        // if true return untestable
+        // if false flip PI which has the first is_flipped=0 from the top of the stack
+        //          is_flipped of that PI=1; others above it = 0
+    }
+    // call bool imply() to find PIs, and it returns true if fault is tested
+    // if false continue
+
+    }
+
 }
 
 netlist::~netlist() {
