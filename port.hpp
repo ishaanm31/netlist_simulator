@@ -2,6 +2,7 @@
 #define PORT_HPP
 
 #include <vector>
+#include <iostream>  // For std::cerr
 class wire;
 class node;
 
@@ -29,15 +30,16 @@ public:
 
     port();
 
-    bool setFaultValue(int val);
-    void setStuckAtFault(int val);
-    void refresh();
-    int getFaultValue() const;
-    bool setFaultFreeValue(int val);
-    int getFaultFreeValue() const;
-    _5_value_logic getDvalue();
-    bool setLevel(int val);
-    int getLevel() const;
+    // Make functions virtual to allow overriding
+    virtual bool setFaultValue(int val);
+    virtual void setStuckAtFault(int val);
+    virtual void refresh();
+    virtual int getFaultValue() const;
+    virtual bool setFaultFreeValue(int val);
+    virtual int getFaultFreeValue() const;
+    virtual _5_value_logic getDvalue();
+    virtual bool setLevel(int val);
+    virtual int getLevel() const;
 };
 
 // Output port class
@@ -49,12 +51,15 @@ protected:
 public:
     virtual ~output_port() = default;
     output_port(node* _driver_gate, wire* _driven_wire);
-    node* getDriverGate();
-    bool setFaultFreeValue(int val);
-    bool setFaultValue(int val);
-    void setStuckAtFault(int val);
-    bool setLevel(int val);
+
+    // Override functions
+    bool setFaultFreeValue(int val) override;
+    bool setFaultValue(int val) override;
+    void setStuckAtFault(int val) override;
+    bool setLevel(int val) override;
     std::vector<node*> getDependentGates();
+
+    node* getDriverGate();
 };
 
 // Input port class
@@ -66,6 +71,8 @@ protected:
 public:
     virtual ~input_port() = default;
     input_port(node* _g, wire* _w);
+
+    // Override functions
     node* getInputGate();
     wire* getDriverWire();
 };

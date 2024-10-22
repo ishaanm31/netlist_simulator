@@ -12,7 +12,7 @@ void port::eval_D_value() {
         D_value = (_5_value_logic)fault_free_value;
     else if ((fault_value == -1) || (fault_free_value == -1))
         D_value = X;
-    else if ((fault_free_value == 0) and (fault_value == 1))
+    else if ((fault_free_value == 0) && (fault_value == 1))
         D_value = D_bar;
     else
         D_value = D;
@@ -84,11 +84,6 @@ int port::getLevel() const {
 // Constructor for output_port
 output_port::output_port(node *_driver_gate, wire *_driven_wire) : driver_gate(_driver_gate), driven_wire(_driven_wire) {}
 
-// Get driver gate
-node *output_port::getDriverGate() {
-    return driver_gate;
-}
-
 // Set fault-free value for output port
 bool output_port::setFaultFreeValue(int val) {
     if (fault_free_value == val)
@@ -137,8 +132,8 @@ input_port::input_port(node *_g, wire *_w) : input_gate(_g), driver_wire(_w) {}
 
 // Get input gate
 node *input_port::getInputGate() {
-    if(input_gate == NULL) {
-        cerr<<"input gate not defined"<<endl;
+    if (input_gate == nullptr) {
+        std::cerr << "Input gate not defined" << std::endl;
         exit(1);
     }
     return input_gate;

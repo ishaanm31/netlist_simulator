@@ -23,6 +23,10 @@ int node::getIndex() {
     return node_idx;
 }
 
+int node::getLevel() {
+    return level;
+}
+
 // Evaluate outputs of the module/gate, return gates which need to be re-evaluated
 std::vector<node*> node::eval() {
     bool change = false;
@@ -75,7 +79,7 @@ std::vector<node*> node::evalLevel() {
     // Update level and propagate changes to output
     level = max_inp_level + 1;
     output->setLevel(level);
-    
+
     // Return dependent gates
     return output->getDependentGates();
 }

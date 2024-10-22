@@ -25,6 +25,7 @@ private:
     std::map<string, primary_input_port*> input_signals;
     std::vector<node*> gates;
     std::map<std::string, wire*> wire_map;
+    map<string, port*> port_map;
 
 public:
     // Constructor
@@ -43,6 +44,11 @@ public:
     void display_output() const;
 
     void levelize();
+
+    // Get test vector for testing all the Stuck at Faults
+    map<string, vector<int>> comb_atpg();
+
+    vector<int> generateTestVector();
 
     // Destructor to clean up allocated resources
     ~netlist();

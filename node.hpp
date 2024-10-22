@@ -40,6 +40,19 @@ public:
 
     // Evaluate the level of the gate, return gates which need to be re-evaluated
     std::vector<node*> evalLevel();
+
+    // Get level
+    int getLevel();
+
+    // Get input ports
+    vector<input_port*> getInputPorts() {
+        return inputs;
+    }
+
+    // Get output ports
+    output_port* getOutputPort() {
+        return output;
+    }
 };
 
 #endif // NODE_HPP
