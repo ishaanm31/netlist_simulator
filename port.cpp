@@ -29,6 +29,10 @@ bool port::setFaultValue(int val) {
     return true;
 }
 
+bool port::getStuckAtFault(){
+     return is_stuck;
+}
+
 // Set stuck-at fault
 void port::setStuckAtFault(int val) {
     is_stuck = true;

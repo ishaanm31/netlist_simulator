@@ -48,7 +48,13 @@ public:
     // Get test vector for testing all the Stuck at Faults
     map<string, vector<int>> comb_atpg();
 
+    bool X_path_check(port* stuck_port);
+
+    pair<primary_input_port*, int> backtrace(pair<port*, int> objective);
+
     vector<int> generateTestVector(port* stuck_port);
+
+    pair<input_port*, int> netlist::getObjective(input_port* stuck_port);
 
     // Destructor to clean up allocated resources
     ~netlist();

@@ -7,7 +7,7 @@
 // Constructor for node
 node::node(int idx, std::vector<wire*> input_wires, wire* output_wire, std::string gate_type)
     : node_idx(idx), evaluated(false) {
-    
+    gate_type = gate_type;
     OperationSingleton& singleton = OperationSingleton::getInstance();
     op = singleton.getOperation(gate_type); // Get an operation functor
     

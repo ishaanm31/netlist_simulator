@@ -25,6 +25,7 @@ private:
     output_port* output;
     std::shared_ptr<operation> op;
     int level;
+    std::string gate_type;
 
 public:
     bool evaluated;
@@ -53,6 +54,7 @@ public:
     output_port* getOutputPort() {
         return output;
     }
+    std::string getGateType() return gate_type;
 };
 
 #endif // NODE_HPP

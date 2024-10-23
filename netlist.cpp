@@ -11,6 +11,7 @@
 
 using namespace std;
 
+
 netlist::netlist(Netlist n) : myNetlist(n) {
     // Populating wire map for internal signals
     for (string x: myNetlist.wires) {
@@ -147,17 +148,65 @@ map<string, vector<int>> netlist::comb_atpg() {
     return TestVectors;
 }
 
+bool netlist::X_path_check(port* stuck_port) {
+    if(dynamic_cast<primary_output_port*>(stuck_port)) {
+        return stuck_port->getFaultFreeValue() == -1;
+    }
+    else if(input_port* p = dynamic_cast<input_port*>(stuck_port)) {
+        if(p->getInputGate()->getOutputPort()->getFaultFreeValue() == -1){
+            return X_path_check(p->getInputGate()->getOutputPort());
+        }
+        else return false;
+    }
+    else if(primary_input_port* p = dynamic_cast<primary_input_port*>(stuck_port)) {
+        bool x_path_exists = false;
+        for(auto next_gates: p->getDependentGates()) {
+            x_path_exists |= X_path_check(next_gates->getOutputPort());
+        }
+        return x_path_exists;
+    }
+    else if(output_port* p = dynamic_cast<output_port*>(stuck_port)) {
+        bool x_path_exists = false;
+        if(p->getFaultFreeValue() != -1) return false;
+        for(auto next_gates: p->getDependentGates()) {
+            x_path_exists |= X_path_check(next_gates->getOutputPort());
+        }
+        return x_path_exists;
+    }
+}
+
+// Function to backtrace and assign PIs
+pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
+    while(1){
+        if(primary_input_port* p = dynamic_cast<primary_input_port*> (objective.first)){
+            p->setFaultFreeValue(objective.second);
+            // TODO: update stack
+            return {p, objective.second};
+        }
+        else {
+            
+        }
+    }
+}
+
+// TODO: Maintain a D-frontier
 // PODEM algorithm to generate a test vector
 vector<int> netlist::generateTestVector(port* stuck_port) {
     while(1){
-    if (X_path_check()) {   // return true if following
+    if (X_path_check(stuck_port)) {   // return true if following
         /*
             All gate output of the chosen path must have X values  Called X-PATH
              If more than one X-path to choose,  chose shortest X-path to PO
              If X-path disappear,  backtrack
         */
-        pair<port*, int> objective = getObjective(); //  getObjective() can return null
-        // call backtrace()
+        if (input_port* p = dynamic_cast<input_port*> (stuck_port)){
+            pair<port*, int> objective = getObjective(p); //  getObjective() can return null
+            // call backtrace(objective)
+            backtrace(objective);
+        }
+        else if (output_port* p = dynamic_cast<output_port*> (stuck_port)){
+            
+        }
 
     }
     else {
@@ -171,6 +220,26 @@ vector<int> netlist::generateTestVector(port* stuck_port) {
     // if false continue
 
     }
+
+}
+
+pair<input_port*, int> netlist::getObjective(input_port* stuck_port){
+    //fault propagation
+    if (stuck_port->getDvalue() == D || stuck_port->getDvalue() == D_bar){
+        for (auto x : stuck_port->getInputGate()->getInputPorts()){
+            if (x != stuck_port)
+                if ((stuck_port->getInputGate()->getGateType() == "AND2") || (stuck_port->getInputGate()->getGateType() == "NAND2"))
+                    return {x,_1};
+                else if ((stuck_port->getInputGate()->getGateType() == "OR2") || (stuck_port->getInputGate()->getGateType() == "NOR2") || (stuck_port->getInputGate()->getGateType() == "XOR2") || (stuck_port->getInputGate()->getGateType() == "XNOR2"))
+                    return {x,_0};
+                
+        }
+    }
+    //fault activation
+    else if (stuck_port->getFaultValue() == 1 && stuck_port->getStuckAtFault()) return{stuck_port,0};
+    else return{stuck_port, 1};
+
+    
 
 }
 

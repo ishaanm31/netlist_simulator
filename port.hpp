@@ -33,6 +33,7 @@ public:
     // Make functions virtual to allow overriding
     virtual bool setFaultValue(int val);
     virtual void setStuckAtFault(int val);
+    virtual bool getStuckAtFault(); 
     virtual void refresh();
     virtual int getFaultValue() const;
     virtual bool setFaultFreeValue(int val);
@@ -55,6 +56,7 @@ public:
     // Override functions
     bool setFaultFreeValue(int val) override;
     bool setFaultValue(int val) override;
+    bool getStuckAtFault() override;
     void setStuckAtFault(int val) override;
     bool setLevel(int val) override;
     std::vector<node*> getDependentGates();
