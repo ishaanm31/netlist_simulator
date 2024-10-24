@@ -26,6 +26,7 @@ private:
     std::vector<node*> gates;
     std::map<std::string, wire*> wire_map;
     map<string, port*> port_map;
+    set<node*> D_frontier;
 
 public:
     // Constructor
@@ -46,15 +47,15 @@ public:
     void levelize();
 
     // Get test vector for testing all the Stuck at Faults
-    map<string, vector<int>> comb_atpg();
+    map<string, map<string, int>> comb_atpg();
 
-    bool X_path_check(port* stuck_port);
+    // bool X_path_check(port* stuck_port);
 
     pair<primary_input_port*, int> backtrace(pair<port*, int> objective);
 
-    vector<int> generateTestVector(port* stuck_port);
+    bool podem_recursion(port* stuck_port);
 
-    pair<input_port*, int> netlist::getObjective(input_port* stuck_port);
+    pair<port*, int> getObjective(port* stuck_port);
 
     // Destructor to clean up allocated resources
     ~netlist();

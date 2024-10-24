@@ -5,9 +5,9 @@
 #include <iostream>
 
 // Constructor for node
-node::node(int idx, std::vector<wire*> input_wires, wire* output_wire, std::string gate_type)
+node::node(int idx, std::vector<wire*> input_wires, wire* output_wire, std::string gate_type_)
     : node_idx(idx), evaluated(false) {
-    gate_type = gate_type;
+    gate_type = gate_type_;
     OperationSingleton& singleton = OperationSingleton::getInstance();
     op = singleton.getOperation(gate_type); // Get an operation functor
     
@@ -83,3 +83,12 @@ std::vector<node*> node::evalLevel() {
     // Return dependent gates
     return output->getDependentGates();
 }
+ bool node::belong_to_D_frontier(){
+    if (output->getDvalue() != X)
+        return false;
+    for (auto x: inputs) {
+        if (x->getDvalue() == D || x->getDvalue() == D_bar)
+            return true;
+    }
+    return false;
+ }

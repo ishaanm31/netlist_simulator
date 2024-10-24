@@ -54,7 +54,18 @@ public:
     output_port* getOutputPort() {
         return output;
     }
-    std::string getGateType() return gate_type;
+
+    // Get gate type
+    std::string getGateType(){
+        return gate_type;
+    };
+
+    // Get inversion parity
+    int getInversionParity(){
+        return op->getInversionParity();
+    };
+
+    bool belong_to_D_frontier();
 };
 
 #endif // NODE_HPP

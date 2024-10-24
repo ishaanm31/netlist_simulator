@@ -8,6 +8,7 @@
 #include <cstdlib>  // For exit()
 #include <string>
 #include <vector>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -111,6 +112,13 @@ void netlist::simulate() {
         for (auto g: affected_gates)
             worklist.push(g);
     }
+    D_frontier.clear();
+    for (auto x: gates) {
+        if (x->belong_to_D_frontier()) {
+            D_frontier.insert(x);
+        }
+    }
+        
 }
 
 void netlist::setPI(string PI_name, int val) {
@@ -130,117 +138,128 @@ void netlist::display_output() const {
     }
 }
 
-map<string, vector<int>> netlist::comb_atpg() {
+map<string, map<string, int>> netlist::comb_atpg() {
     // Populating all ports for which we will be calculating 
-    map<string, vector<int>> TestVectors;
+    map<string, map<string, int>> TestVectors;
     for (auto p: port_map) {
         string s = p.first;
         s.append("|SA0");
         this->refresh();
         p.second->setStuckAtFault(0);
-        TestVectors[s] = generateTestVector(p.second);
+        map<string, int> TestVector;
+        if (podem_recursion(p.second)){
+            for(auto pi: input_signals) {
+                TestVector[pi.first] = pi.second->getFaultFreeValue();
+            }
+            TestVectors[s] = TestVector;
+        }
         s = p.first;
         s.append("|SA1");
         this->refresh();
         p.second->setStuckAtFault(1);
-        TestVectors[s] = generateTestVector(p.second);
-    }
+        TestVector.clear();
+        if (podem_recursion(p.second)){
+            for(auto pi: input_signals) {
+                TestVector[pi.first] = pi.second->getFaultFreeValue();
+            }
+            TestVectors[s] = TestVector;
+        }    
+        }
     return TestVectors;
 }
 
-bool netlist::X_path_check(port* stuck_port) {
-    if(dynamic_cast<primary_output_port*>(stuck_port)) {
-        return stuck_port->getFaultFreeValue() == -1;
-    }
-    else if(input_port* p = dynamic_cast<input_port*>(stuck_port)) {
-        if(p->getInputGate()->getOutputPort()->getFaultFreeValue() == -1){
-            return X_path_check(p->getInputGate()->getOutputPort());
-        }
-        else return false;
-    }
-    else if(primary_input_port* p = dynamic_cast<primary_input_port*>(stuck_port)) {
-        bool x_path_exists = false;
-        for(auto next_gates: p->getDependentGates()) {
-            x_path_exists |= X_path_check(next_gates->getOutputPort());
-        }
-        return x_path_exists;
-    }
-    else if(output_port* p = dynamic_cast<output_port*>(stuck_port)) {
-        bool x_path_exists = false;
-        if(p->getFaultFreeValue() != -1) return false;
-        for(auto next_gates: p->getDependentGates()) {
-            x_path_exists |= X_path_check(next_gates->getOutputPort());
-        }
-        return x_path_exists;
-    }
-}
+// bool netlist::X_path_check(port* stuck_port) {
+//     if(dynamic_cast<primary_output_port*>(stuck_port)) {
+//         return stuck_port->getFaultFreeValue() == -1;
+//     }
+//     else if(input_port* p = dynamic_cast<input_port*>(stuck_port)) {
+//         if(p->getInputGate()->getOutputPort()->getFaultFreeValue() == -1){
+//             return X_path_check(p->getInputGate()->getOutputPort());
+//         }
+//         else return false;
+//     }
+//     else if(primary_input_port* p = dynamic_cast<primary_input_port*>(stuck_port)) {
+//         bool x_path_exists = false;
+//         for(auto next_gates: p->getDependentGates()) {
+//             x_path_exists |= X_path_check(next_gates->getOutputPort());
+//         }
+//         return x_path_exists;
+//     }
+//     else if(output_port* p = dynamic_cast<output_port*>(stuck_port)) {
+//         bool x_path_exists = false;
+//         if(p->getFaultFreeValue() != -1) return false;
+//         for(auto next_gates: p->getDependentGates()) {
+//             x_path_exists |= X_path_check(next_gates->getOutputPort());
+//         }
+//         return x_path_exists;
+//     }
+// }
 
 // Function to backtrace and assign PIs
 pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
+    int num_inversions = 0;
+    output_port* current_port;
+    current_port = dynamic_cast<output_port*> (objective.first);
     while(1){
-        if(primary_input_port* p = dynamic_cast<primary_input_port*> (objective.first)){
-            p->setFaultFreeValue(objective.second);
-            // TODO: update stack
+        // if current_port is PI, we are done
+        if(primary_input_port* p = dynamic_cast<primary_input_port*> (current_port)){
+            p->setFaultFreeValue((objective.second +num_inversions%2)%2);
             return {p, objective.second};
         }
         else {
-            
+            num_inversions += current_port->getDriverGate()->getInversionParity();
+            for(auto gate_ip: current_port->getDriverGate()->getInputPorts()) {
+                if(gate_ip->getFaultFreeValue() == -1) {
+                    current_port = gate_ip->getDriverWire()->getDriverPort();
+                    break;
+                }
+            }
         }
     }
 }
 
-// TODO: Maintain a D-frontier
-// PODEM algorithm to generate a test vector
-vector<int> netlist::generateTestVector(port* stuck_port) {
-    while(1){
-    if (X_path_check(stuck_port)) {   // return true if following
-        /*
-            All gate output of the chosen path must have X values  Called X-PATH
-             If more than one X-path to choose,  chose shortest X-path to PO
-             If X-path disappear,  backtrack
-        */
-        if (input_port* p = dynamic_cast<input_port*> (stuck_port)){
-            pair<port*, int> objective = getObjective(p); //  getObjective() can return null
-            // call backtrace(objective)
-            backtrace(objective);
+bool netlist::podem_recursion(port* stuck_port) {
+    for(auto po: output_signals) {
+        if(po.second->getDvalue() == D || po.second->getDvalue() == D_bar) {
+            return true;
         }
-        else if (output_port* p = dynamic_cast<output_port*> (stuck_port)){
-            
-        }
-
     }
-    else {
-        // todo: make a stack for decisons at PI: PI name, value, bool is_flipped
-        // call bool all_assignmnents_tried(stack). ... i.e. is_flipped of all is 1
-        // if true return untestable
-        // if false flip PI which has the first is_flipped=0 from the top of the stack
-        //          is_flipped of that PI=1; others above it = 0
-    }
-    // call bool imply() to find PIs, and it returns true if fault is tested
-    // if false continue
-
-    }
-
+    pair<port*, int> obj = getObjective(stuck_port);
+    pair<primary_input_port*, int> pi_value = backtrace(obj);
+    simulate();
+    bool result = podem_recursion(stuck_port);
+    if(result) return true;
+    pi_value.second = (pi_value.second+1)%2;
+    simulate();
+    result = podem_recursion(stuck_port);
+    pi_value.second = -1;
+    simulate();
+    return false;
 }
 
-pair<input_port*, int> netlist::getObjective(input_port* stuck_port){
+
+pair<port*, int> netlist::getObjective(port* stuck_port){
     //fault propagation
     if (stuck_port->getDvalue() == D || stuck_port->getDvalue() == D_bar){
-        for (auto x : stuck_port->getInputGate()->getInputPorts()){
-            if (x != stuck_port)
-                if ((stuck_port->getInputGate()->getGateType() == "AND2") || (stuck_port->getInputGate()->getGateType() == "NAND2"))
-                    return {x,_1};
-                else if ((stuck_port->getInputGate()->getGateType() == "OR2") || (stuck_port->getInputGate()->getGateType() == "NOR2") || (stuck_port->getInputGate()->getGateType() == "XOR2") || (stuck_port->getInputGate()->getGateType() == "XNOR2"))
-                    return {x,_0};
+        if (input_port* p = dynamic_cast<input_port*> (stuck_port)){
+            for (auto x : p->getInputGate()->getInputPorts()){
+                if (x != p && x->getFaultFreeValue() == -1)
+                    if ((p->getInputGate()->getGateType() == "AND2") || (p->getInputGate()->getGateType() == "NAND2"))
+                        return {x,1};
+                    else if ((p->getInputGate()->getGateType() == "OR2") || (p->getInputGate()->getGateType() == "NOR2") || (p->getInputGate()->getGateType() == "XOR2") || (p->getInputGate()->getGateType() == "XNOR2"))
+                        return {x,0};
+            }        
                 
+        }
+        else {
+            cerr<<"Error get objective"<<endl;
+            exit(1);
+            return {NULL, 0};
         }
     }
     //fault activation
     else if (stuck_port->getFaultValue() == 1 && stuck_port->getStuckAtFault()) return{stuck_port,0};
-    else return{stuck_port, 1};
-
-    
-
+    else return {stuck_port, 1};
 }
 
 netlist::~netlist() {
