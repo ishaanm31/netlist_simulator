@@ -79,7 +79,7 @@ public:
 // netlist class definition
 class netlist {
 private:
-    Netlist myNetlist;
+    Netlist unrolled_netlist;
     std::map<string ,primary_output_port*> output_signals;
     std::map<string, primary_input_port*> input_signals;
     std::vector<node*> gates;
@@ -89,6 +89,8 @@ private:
 
 public:
     // Constructor
+    Netlist myNetlist;
+
     netlist(Netlist n);
 
     // Populates internal fields using the base netlist
@@ -116,6 +118,8 @@ public:
 
     // Destructor to clean up allocated resources
     ~netlist();
+
+    void print_netlist(Netlist n);
 };
 
 #endif // NETLIST_HPP
