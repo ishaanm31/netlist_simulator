@@ -55,4 +55,10 @@ public:
     }
 };
 
+class node_ff{
+    
+
+
+};
+
 #endif // NODE_HPP

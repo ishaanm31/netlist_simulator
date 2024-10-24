@@ -2,10 +2,11 @@ module simple_circuit (
 output out1,
 input in1, in2, in3
 );
-wire w1, w2;
+wire w1, w2, w3;
 
 // Gates
 AND2 u1 (w1,in1,in2) ;
-OR2  u2 (out1,w1,in3) ;
-
+OR2  u2 (w2,w1,in3) ;
+DFF  u3 (w3, w2, clk) ;
+DFF  u4 (out1, w3, clk) ;
 endmodule

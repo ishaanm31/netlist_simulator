@@ -13,12 +13,19 @@ struct Gate {
     std::vector<std::string> inputs;
 };
 
+// Structure to store information about a FF
+struct FF {
+    std::string Q;
+    std::string D;
+};
+
 // Structure to store the entire netlist
 struct Netlist {
     std::vector<std::string> inputs;
     std::vector<std::string> outputs;
     std::vector<std::string> wires;
     std::vector<Gate> gates;
+    std::vector<FF> ff;
 };
 
 class netlist_parser {

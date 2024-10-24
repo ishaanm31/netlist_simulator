@@ -12,6 +12,11 @@
 using namespace std;
 
 netlist::netlist(Netlist n) : myNetlist(n) {
+    if(!n.ff.empty()){
+        cout<<"flip-flops in the netlist"<<endl;
+        seq_depth = getSeqDepth(n);
+    }
+
     // Populating wire map for internal signals
     for (string x: myNetlist.wires) {
         wire *w = new wire(x);
@@ -149,31 +154,62 @@ map<string, vector<int>> netlist::comb_atpg() {
 
 // PODEM algorithm to generate a test vector
 vector<int> netlist::generateTestVector(port* stuck_port) {
-    while(1){
-    if (X_path_check()) {   // return true if following
-        /*
-            All gate output of the chosen path must have X values  Called X-PATH
-             If more than one X-path to choose,  chose shortest X-path to PO
-             If X-path disappear,  backtrack
-        */
-        pair<port*, int> objective = getObjective(); //  getObjective() can return null
-        // call backtrace()
+ return  {};
 
-    }
-    else {
-        // todo: make a stack for decisons at PI: PI name, value, bool is_flipped
-        // call bool all_assignmnents_tried(stack). ... i.e. is_flipped of all is 1
-        // if true return untestable
-        // if false flip PI which has the first is_flipped=0 from the top of the stack
-        //          is_flipped of that PI=1; others above it = 0
-    }
-    // call bool imply() to find PIs, and it returns true if fault is tested
-    // if false continue
+    // while(1){
+    // if (X_path_check()) {   // return true if following
+    //     /*
+    //         All gate output of the chosen path must have X values  Called X-PATH
+    //          If more than one X-path to choose,  chose shortest X-path to PO
+    //          If X-path disappear,  backtrack
+    //     */
+    //     pair<port*, int> objective = getObjective(); //  getObjective() can return null
+    //     // call backtrace()
 
-    }
+    // }
+    // else {
+    //     // todo: make a stack for decisons at PI: PI name, value, bool is_flipped
+    //     // call bool all_assignmnents_tried(stack). ... i.e. is_flipped of all is 1
+    //     // if true return untestable
+    //     // if false flip PI which has the first is_flipped=0 from the top of the stack
+    //     //          is_flipped of that PI=1; others above it = 0
+    // }
+    // // call bool imply() to find PIs, and it returns true if fault is tested
+    // // if false continue
 
+    // }
 }
 
+int netlist::getSeqDepth(Netlist n) {
+    // Calculate the sequential depth of the netlist
+    CircuitGraph circuit;
+
+    // Add edges from logic gates to the graph
+    for (const Gate& gate : n.gates) {
+        for (const string& input : gate.inputs) {
+            circuit.addEdge(input, gate.output); // Connect gate inputs to its output
+        }
+    }
+
+    // Add edges from flip-flop outputs to gate inputs
+    for (const FF& ff : n.ff) {
+        circuit.addEdge(ff.D, ff.Q); // Connect flip-flop input to output
+        circuit.addFlipFlop(ff.Q);  // Add flip-flop output to the graph
+    }
+
+    // Calculate and display the sequential depth of the circuit
+    int depth = circuit.calculateSequentialDepth();
+    cout << "Sequential Depth: " << depth << endl;
+    return depth;
+}
+
+void netlist::unroll() {
+    // Unroll the netlist
+    // Implement your logic here
+    
+    
+
+}
 netlist::~netlist() {
     // Destructor: Clean up dynamically allocated memory
     for (auto pair : wire_map) {
