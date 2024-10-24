@@ -95,6 +95,12 @@ void netlist::refresh() {
     for (auto inp_pair: input_signals) {
         inp_pair.second->refresh();
     }
+    for (auto out_pair: output_signals) {
+        out_pair.second->refresh();
+    }
+    for (auto port_pair: port_map) {
+        port_pair.second->refresh();
+    }
     // Resimulate after refresh
     simulate();
 }
@@ -146,25 +152,45 @@ map<string, map<string, int>> netlist::comb_atpg() {
         s.append("|SA0");
         this->refresh();
         p.second->setStuckAtFault(0);
+        simulate();
         map<string, int> TestVector;
-        if (podem_recursion(p.second)){
-            for(auto pi: input_signals) {
+        cout<<"Finding Test vector for fault: "<<s<<endl;
+        bool testable = podem_recursion(p.second);
+        for(auto pi: input_signals) {
+            if (testable)
                 TestVector[pi.first] = pi.second->getFaultFreeValue();
-            }
-            TestVectors[s] = TestVector;
+            else
+               TestVector[pi.first] = -1;
+
         }
+        TestVectors[s] = TestVector;
+        cout<<"Found TV: "<<s<<" -> ";
+        for(auto t: TestVector){
+            cout<<t.second<<", ";
+        }
+        cout<<endl;
         s = p.first;
         s.append("|SA1");
         this->refresh();
         p.second->setStuckAtFault(1);
+        simulate();
         TestVector.clear();
-        if (podem_recursion(p.second)){
-            for(auto pi: input_signals) {
+        cout<<"Finding Test vector for fault: "<<s<<endl;
+        testable = podem_recursion(p.second);
+        for(auto pi: input_signals) {
+            if (testable)
                 TestVector[pi.first] = pi.second->getFaultFreeValue();
-            }
-            TestVectors[s] = TestVector;
-        }    
+            else
+               TestVector[pi.first] = -1;
+
         }
+        TestVectors[s] = TestVector;
+        cout<<"Found TV: "<<s<<" -> ";
+        for(auto t: TestVector){
+            cout<<t.second<<", ";
+        }
+        cout<<endl;    
+    }
     return TestVectors;
 }
 
@@ -199,17 +225,24 @@ map<string, map<string, int>> netlist::comb_atpg() {
 pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
     int num_inversions = 0;
     output_port* current_port;
-    current_port = dynamic_cast<output_port*> (objective.first);
+    cout<<"backtrace"<<endl;
+    if(!(current_port = dynamic_cast<output_port*> (objective.first)))
+        current_port = (dynamic_cast<input_port*> (objective.first))->getDriverWire()->getDriverPort();
     while(1){
         // if current_port is PI, we are done
         if(primary_input_port* p = dynamic_cast<primary_input_port*> (current_port)){
-            p->setFaultFreeValue((objective.second +num_inversions%2)%2);
-            return {p, objective.second};
+            for( auto x: input_signals) {
+                if (x.second == p)
+                    cout<<"Backtraced PI: "<<x.first<<" Value: "<<(objective.second + num_inversions) %2<<endl;
+            }
+            cout<<"Backtraced to PI"<<endl;
+            return {p, (objective.second + num_inversions) % 2};
         }
         else {
-            num_inversions += current_port->getDriverGate()->getInversionParity();
             for(auto gate_ip: current_port->getDriverGate()->getInputPorts()) {
                 if(gate_ip->getFaultFreeValue() == -1) {
+                    num_inversions += current_port->getDriverGate()->getInversionParity();
+                    cout<<"back back with num_inv: "<<num_inversions<<endl;
                     current_port = gate_ip->getDriverWire()->getDriverPort();
                     break;
                 }
@@ -219,48 +252,102 @@ pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
 }
 
 bool netlist::podem_recursion(port* stuck_port) {
+    // cout<<"hi1"<<endl;
     for(auto po: output_signals) {
         if(po.second->getDvalue() == D || po.second->getDvalue() == D_bar) {
             return true;
         }
     }
+    // cout<<"hi2"<<endl;
     pair<port*, int> obj = getObjective(stuck_port);
+    if (obj.first == NULL) return false; // D frontier is empty;
+    // cout<<"hi3"<<endl;
     pair<primary_input_port*, int> pi_value = backtrace(obj);
+    // cout<<"hi4"<<endl;
+    pi_value.first->setFaultFreeValue(pi_value.second);
+    pi_value.first->setFaultValue(pi_value.second);
+    // cout<<"hi5"<<endl;
     simulate();
     bool result = podem_recursion(stuck_port);
-    if(result) return true;
+    if(result) {
+        // cout<<"Returned true once bhai"<<endl;
+        return true;
+    }
     pi_value.second = (pi_value.second+1)%2;
+    pi_value.first->setFaultFreeValue(pi_value.second);
+    pi_value.first->setFaultValue(pi_value.second);
     simulate();
     result = podem_recursion(stuck_port);
     pi_value.second = -1;
+    pi_value.first->setFaultFreeValue(pi_value.second);
+    pi_value.first->setFaultValue(pi_value.second);
     simulate();
     return false;
 }
 
 
 pair<port*, int> netlist::getObjective(port* stuck_port){
-    //fault propagation
-    if (stuck_port->getDvalue() == D || stuck_port->getDvalue() == D_bar){
-        if (input_port* p = dynamic_cast<input_port*> (stuck_port)){
-            for (auto x : p->getInputGate()->getInputPorts()){
-                if (x != p && x->getFaultFreeValue() == -1)
-                    if ((p->getInputGate()->getGateType() == "AND2") || (p->getInputGate()->getGateType() == "NAND2"))
-                        return {x,1};
-                    else if ((p->getInputGate()->getGateType() == "OR2") || (p->getInputGate()->getGateType() == "NOR2") || (p->getInputGate()->getGateType() == "XOR2") || (p->getInputGate()->getGateType() == "XNOR2"))
-                        return {x,0};
-            }        
-                
+    cout<<"Get objective"<<endl;
+    if (stuck_port->getStuckAtFault()) {
+        if (stuck_port->getFaultFreeValue() == -1) {
+            int comp = (stuck_port->getFaultValue() + 1) % 2;
+            cout<<"Returning activation of :"<<comp<<endl;
+            return {stuck_port, comp};
         }
-        else {
-            cerr<<"Error get objective"<<endl;
-            exit(1);
-            return {NULL, 0};
+        if (stuck_port->getFaultFreeValue() == stuck_port->getFaultValue()) {
+            return {NULL, -1};
         }
     }
-    //fault activation
-    else if (stuck_port->getFaultValue() == 1 && stuck_port->getStuckAtFault()) return{stuck_port,0};
-    else return {stuck_port, 1};
+    node *gate = *D_frontier.begin();
+    cout<<"Dfrontier size: "<<D_frontier.size()<<endl;
+    if (gate == NULL) {
+        return {NULL, -1};
+    }
+    for (auto x : gate->getInputPorts()){
+        if ((x != stuck_port) && (x->getFaultFreeValue() == -1)){
+            if ((gate->getGateType() == "AND2") || (gate->getGateType() == "NAND2"))
+                return {x,1};
+            else 
+                return {x,0};
+        }
+    }
+    cerr<<"D frontier is corrupted"<<endl;
+    exit(1); 
 }
+
+// pair<port*, int> netlist::getObjective(port* stuck_port){
+//     //fault propagation
+//     if(stuck_port == NULL) {
+//         cerr<<"Stuck port NULL"<<endl;
+//         exit(1);
+//     }
+//     if (stuck_port->getDvalue() == D || stuck_port->getDvalue() == D_bar){
+//         cout<<"Hi1"<<endl;
+//         if (input_port* p = dynamic_cast<input_port*> (stuck_port)){
+//             for (auto x : p->getInputGate()->getInputPorts()){
+//                 if ((x != p) && (x->getFaultFreeValue() == -1)){
+//                     if ((p->getInputGate()->getGateType() == "AND2") || (p->getInputGate()->getGateType() == "NAND2"))
+//                         return {x,1};
+//                     else if ((p->getInputGate()->getGateType() == "OR2") || (p->getInputGate()->getGateType() == "NOR2") || (p->getInputGate()->getGateType() == "XOR2") || (p->getInputGate()->getGateType() == "XNOR2"))
+//                         return {x,0};
+//                 }
+//             }        
+                
+//         }
+//         else {
+//             cerr<<"Error get objective"<<endl;
+//             exit(1);
+//             return {stuck_port, 0};
+//         }
+//     }
+//     //fault activation
+//     else if ((stuck_port->getFaultValue() == 1) && (stuck_port->getStuckAtFault())) {
+//         cout<<"Hi2"<<endl;
+//         return{stuck_port,0};
+//     }
+//     cout<<"Hi3"<<endl;
+//     return {stuck_port, 1};
+// }
 
 netlist::~netlist() {
     // Destructor: Clean up dynamically allocated memory

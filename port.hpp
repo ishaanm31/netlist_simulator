@@ -56,7 +56,6 @@ public:
     // Override functions
     bool setFaultFreeValue(int val) override;
     bool setFaultValue(int val) override;
-    bool getStuckAtFault() override;
     void setStuckAtFault(int val) override;
     bool setLevel(int val) override;
     std::vector<node*> getDependentGates();

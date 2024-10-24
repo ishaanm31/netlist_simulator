@@ -30,7 +30,7 @@ bool port::setFaultValue(int val) {
 }
 
 bool port::getStuckAtFault(){
-     return is_stuck;
+    return is_stuck;
 }
 
 // Set stuck-at fault
@@ -129,6 +129,10 @@ bool output_port::setLevel(int val) {
 // Get dependent gates
 std::vector<node*> output_port::getDependentGates() {
     return driven_wire->getDependentGates();
+}
+
+node *output_port::getDriverGate() {
+    return driver_gate;
 }
 
 // Constructor for input_port

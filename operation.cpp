@@ -9,8 +9,11 @@ int op_and2::operator()(const std::vector<int>& input_) const {
         std::cerr << "Input vector of AND2 gate must have exactly 2 inputs" << std::endl;
         exit(1);
     }
+    if (input_[0] == 0 || input_[1] == 0) {
+        return 0;  // Controlling case for AND
+    }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return (input_[0] && input_[1]) ? 1 : 0;
 }
@@ -22,8 +25,11 @@ int op_or2::operator()(const std::vector<int>& input_) const {
         std::cerr << "Input vector of OR2 gate must have exactly 2 inputs" << std::endl;
         exit(1);
     }
+    if (input_[0] == 1 || input_[1] == 1) {
+        return 1;  // Controlling case for OR
+    }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return (input_[0] || input_[1]) ? 1 : 0;
 }
@@ -36,7 +42,7 @@ int op_not::operator()(const std::vector<int>& input_) const {
         exit(1);
     }
     if (input_[0] == -1) {
-        return -1;
+        return -1;  // Unknown result
     }
     return !input_[0] ? 1 : 0;
 }
@@ -48,8 +54,11 @@ int op_nand2::operator()(const std::vector<int>& input_) const {
         std::cerr << "Input vector of NAND2 gate must have exactly 2 inputs" << std::endl;
         exit(1);
     }
+    if (input_[0] == 0 || input_[1] == 0) {
+        return 1;  // Controlling case for NAND
+    }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return !(input_[0] && input_[1]) ? 1 : 0;
 }
@@ -61,8 +70,11 @@ int op_nor2::operator()(const std::vector<int>& input_) const {
         std::cerr << "Input vector of NOR2 gate must have exactly 2 inputs" << std::endl;
         exit(1);
     }
+    if (input_[0] == 1 || input_[1] == 1) {
+        return 0;  // Controlling case for NOR
+    }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return !(input_[0] || input_[1]) ? 1 : 0;
 }
@@ -75,7 +87,7 @@ int op_xor2::operator()(const std::vector<int>& input_) const {
         exit(1);
     }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return (input_[0] != input_[1]) ? 1 : 0;
 }
@@ -88,7 +100,7 @@ int op_xnor2::operator()(const std::vector<int>& input_) const {
         exit(1);
     }
     if (input_[0] == -1 || input_[1] == -1) {
-        return -1;
+        return -1; // Unknown result
     }
     return (input_[0] == input_[1]) ? 1 : 0;
 }
@@ -101,10 +113,11 @@ int op_buf::operator()(const std::vector<int>& input_) const {
         exit(1);
     }
     if (input_[0] == -1) {
-        return -1;
+        return -1;  // Unknown result
     }
     return input_[0];
 }
+
 
 // Singleton Manager for operation functors
 OperationSingleton::OperationSingleton() {
