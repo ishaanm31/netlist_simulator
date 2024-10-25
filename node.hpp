@@ -68,4 +68,10 @@ public:
     bool belong_to_D_frontier();
 };
 
+class node_ff{
+    
+
+
+};
+
 #endif // NODE_HPP

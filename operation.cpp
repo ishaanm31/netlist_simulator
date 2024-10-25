@@ -137,11 +137,11 @@ OperationSingleton& OperationSingleton::getInstance() {
 }
 
 std::shared_ptr<operation> OperationSingleton::getOperation(const std::string& type) {
-    auto it = operations.find(type);
-    if (it != operations.end()) {
-        return it->second;
-    } else {
-        std::cerr << "Unknown operation type: " << type << std::endl;
-        return nullptr;
-    }
+        auto it = operations.find(type);
+        if (it != operations.end()) {
+            return it->second;
+        } else {
+            std::cerr << "Unknown operation type: " << type << std::endl;
+            return nullptr;
+        }
 }

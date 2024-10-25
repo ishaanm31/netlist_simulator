@@ -28,12 +28,14 @@ int main(){
         cout<<"For exiting the loop enter Q\n";
         cout<<"Give input vector in the given foWWrmat: for input A=0 B=1 C=0 write 010 in the command line"<<endl;
         cout<<"Inputs for our netlist are:\n ";
-        for (auto inp: my_parser.netlist.inputs) 
+        for (auto inp: my_netlist.myNetlist.inputs) 
             cout<<inp<<", ";
         cout<<endl;
         string ss;
         cin>>ss;
         if ((ss[0] == 'Q') or (ss[0] == 'q')) break;
+        my_netlist.refresh();
+        if(ss.size() != my_netlist.myNetlist.inputs.size()){
         if (ss[0] == 'F') {
             auto comb_atpg = my_netlist.comb_atpg();
             for (auto entry: comb_atpg) {
@@ -49,7 +51,7 @@ int main(){
             continue;
         }
         for(long unsigned int i = 0; i < ss.size(); i++) {
-            my_netlist.setPI(my_parser.netlist.inputs[i],((ss[i]=='0')?0:1));
+            my_netlist.setPI(my_netlist.myNetlist.inputs[i],((ss[i]=='0')?0:1));
         }
         my_netlist.simulate();
         my_netlist.display_output();

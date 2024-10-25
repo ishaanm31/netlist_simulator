@@ -14,8 +14,12 @@ using namespace std;
 
 
 netlist::netlist(Netlist n) : myNetlist(n) {
-    // Populating wire map for internal signals
-    for (string x: myNetlist.wires) {
+    if (!n.ff.empty()){
+        cout<<"flip-flops in the netlist"<<endl;
+        seq_depth = getSeqDepth(n);
+        unroll();
+        // Populating wire map for internal signals
+    for (string x: myNetlist.wires){
         wire *w = new wire(x);
         wire_map[x] = w;
     }
@@ -27,7 +31,7 @@ netlist::netlist(Netlist n) : myNetlist(n) {
         primary_input_port* PI_port = w->createDriverPort();
         input_signals[x] = PI_port;
         string s ="PI:";
-        s.append(x);
+        s+(x);
         port_map[s] = PI_port;
     }
 
@@ -38,7 +42,7 @@ netlist::netlist(Netlist n) : myNetlist(n) {
         primary_output_port* PO_port = w->createDrivenPort();
         output_signals[x] = PO_port;
         string s ="PO:";
-        s.append(x);
+        s+(x);
         port_map[s] = PO_port;
     }
     // Creating gates and connecting wires
@@ -55,15 +59,70 @@ netlist::netlist(Netlist n) : myNetlist(n) {
         int idx = 0;
         for (auto inp_port: inp_ports) {
             string s = "GID:";
-            s.append(to_string(gate->getIndex()));
-            s.append("ip:");
-            s.append(to_string(idx++));
+            s+(to_string(gate->getIndex()));
+            s+("ip:");
+            s+(to_string(idx++));
             port_map[s] = inp_port;
         }
         string s = "GID:";
-        s.append(to_string(gate->getIndex()));
-        s.append("op");
+        s+(to_string(gate->getIndex()));
+        s+("op");
         port_map[s] = gate->getOutputPort();
+    }
+    }
+    else {
+
+    // Populating wire map for internal signals
+    for (string x: myNetlist.wires) {
+        wire *w = new wire(x);
+        wire_map[x] = w;
+    }
+
+    // Populating wire map and primary input signals
+    for (string x: myNetlist.inputs) {
+        wire *w = new wire(x);
+        wire_map[x] = w;
+        primary_input_port* PI_port = w->createDriverPort();
+        input_signals[x] = PI_port;
+        string s ="PI:";
+        s+(x);
+        port_map[s] = PI_port;
+    }
+
+    // Populating wire map and primary output signals (should use outputs, not inputs)
+    for (string x: myNetlist.outputs) {
+        wire *w = new wire(x);
+        wire_map[x] = w;
+        primary_output_port* PO_port = w->createDrivenPort();
+        output_signals[x] = PO_port;
+        string s ="PO:";
+        s+(x);
+        port_map[s] = PO_port;
+    }
+    // Creating gates and connecting wires
+    int idx = 0;
+    for (Gate g: myNetlist.gates) {
+        vector<wire*> g_inp;
+        for (string inp: g.inputs) {
+            g_inp.push_back(wire_map[inp]);
+        }
+        node *gate = new node(idx++, g_inp, wire_map[g.output], g.type);
+        gates.push_back(gate);
+
+        vector<input_port*> inp_ports = gate->getInputPorts();
+        int idx = 0;
+        for (auto inp_port: inp_ports) {
+            string s = "GID:";
+            s+(to_string(gate->getIndex()));
+            s+("ip:");
+            s+(to_string(idx++));
+            port_map[s] = inp_port;
+        }
+        string s = "GID:";
+        s+(to_string(gate->getIndex()));
+        s+("op");
+        port_map[s] = gate->getOutputPort();
+    }
     }
 
     levelize();  // Levelize the circuit (evaluate levels)
@@ -149,7 +208,7 @@ map<string, map<string, int>> netlist::comb_atpg() {
     map<string, map<string, int>> TestVectors;
     for (auto p: port_map) {
         string s = p.first;
-        s.append("|SA0");
+        s+("|SA0");
         this->refresh();
         p.second->setStuckAtFault(0);
         simulate();
@@ -170,7 +229,7 @@ map<string, map<string, int>> netlist::comb_atpg() {
         }
         cout<<endl;
         s = p.first;
-        s.append("|SA1");
+        s+("|SA1");
         this->refresh();
         p.second->setStuckAtFault(1);
         simulate();
@@ -356,5 +415,34 @@ netlist::~netlist() {
     }
     for (auto g : gates) {
         delete g;
+    }
+}
+void netlist::print_netlist(Netlist n){
+    cout<<"Inputs: ";
+    for(auto i : n.inputs){
+        cout<<i<<" ";
+    }
+    cout<<endl;
+    cout<<"Outputs: ";
+    for(auto i : n.outputs){
+        cout<<i<<" ";
+    }
+    cout<<endl;
+    cout<<"Wires: ";
+    for(auto i : n.wires){
+        cout<<i<<" ";
+    }
+    cout<<endl;
+    cout<<"Gates: " << endl;
+    for(auto i : n.gates){
+        cout<<i.output<<" "<<i.type<<" ";
+        for(auto j : i.inputs){
+            cout<<j<<" ";
+        }
+        cout<<endl;
+    }
+    cout<<"FF: ";
+    for(auto i : n.ff){
+        cout<<i.D<<" "<<i.Q<<endl;
     }
 }
