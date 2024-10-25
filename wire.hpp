@@ -12,6 +12,8 @@ class output_port;
 class input_port;
 class primary_input_port;
 class primary_output_port;
+class p_primary_output_port;
+class p_primary_input_port;
 class node;
 
 // Connects output ports to the corresponding input ports
@@ -30,6 +32,7 @@ public:
 
     // Gets us the driver port of this wire. Used for creating primary input
     primary_input_port *createDriverPort();
+    p_primary_input_port *createDriverPort_();
 
     output_port *getDriverPort();
 
@@ -38,6 +41,7 @@ public:
 
     // Creates primary output ports
     primary_output_port *createDrivenPort();
+    p_primary_output_port *createDrivenPort_();
 
     // Every time someone updates the value of the output port, this function updates values of input ports
     bool updateFaultFreeValue();

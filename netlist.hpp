@@ -79,19 +79,22 @@ public:
 // netlist class definition
 class netlist {
 private:
-    Netlist unrolled_netlist;
     std::map<string ,primary_output_port*> output_signals;
     std::map<string, primary_input_port*> input_signals;
+    std::map<string, p_primary_input_port*> ppi_signals;
+    std::map<string, p_primary_output_port*> ppo_signals;
     std::vector<node*> gates;
+    std::vector<string> PPI;
+    std::vector<string> PPO;
     std::map<std::string, wire*> wire_map;
     map<string, port*> port_map;
     set<node*> D_frontier;
     int seq_depth;
 
 public:
-    // Constructor
-    Netlist myNetlist;
 
+    Netlist myNetlist;
+    // Constructor
     netlist(Netlist n);
 
     // Populates internal fields using the base netlist
@@ -108,13 +111,20 @@ public:
 
     void levelize();
 
+    // Gets test vectors for both sequential and combinational type of circuits
+    map<string, map<string, int>> generate_test_vectors();
+
     // Get test vector for testing all the Stuck at Faults
     map<string, map<string, int>> comb_atpg();
+
+    // Get test vector for testing all the Stuck at Faults in seq ckt
+    map<string, map<string, int>> seq_atpg();
 
     // bool X_path_check(port* stuck_port);
 
     pair<primary_input_port*, int> backtrace(pair<port*, int> objective);
-
+    pair<primary_input_port*, int> backtrace2(pair<port*, int> objective);
+    pair<primary_input_port*, int> backtrace_recursive(pair<port*, int> objective);
     bool podem_recursion(port* stuck_port);
 
     pair<port*, int> getObjective(port* stuck_port);
@@ -125,6 +135,9 @@ public:
 
     // Destructor to clean up allocated resources
     ~netlist();
+    
+    void print_node_values();
+
 
     void print_netlist(Netlist n);
 };

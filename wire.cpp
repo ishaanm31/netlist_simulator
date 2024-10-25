@@ -28,6 +28,15 @@ primary_input_port* wire::createDriverPort() {
     return (primary_input_port*)driver_port;
 }
 
+p_primary_input_port* wire::createDriverPort_() {
+    if (driver_port != NULL) {
+        cerr << "Tried to create driver port twice on wire: " << name << "\nExiting the system!";
+        exit(1);
+    }
+    driver_port = new p_primary_input_port(this);
+    return (p_primary_input_port*)driver_port;
+}
+
 output_port* wire::getDriverPort() {
     return driver_port;
 }
@@ -45,6 +54,13 @@ primary_output_port* wire::createDrivenPort() {
     driven_ports.push_back(ip_port);
     return (primary_output_port*) ip_port;
 }
+
+p_primary_output_port* wire::createDrivenPort_() {
+    p_primary_output_port* ip_port = new p_primary_output_port(this);
+    driven_ports.push_back(ip_port);
+    return (p_primary_output_port*) ip_port;
+}
+
 
 // Updates values of input ports when output port's fault-free value changes
 bool wire::updateFaultFreeValue() {

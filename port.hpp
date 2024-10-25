@@ -85,6 +85,20 @@ public:
     node* getDriverGate() = delete;
 };
 
+// Psuedo-primary input port class
+class p_primary_input_port : public output_port {
+public:
+    p_primary_input_port(wire* _w);
+    node* getDriverGate() = delete;
+};
+
+// Psuedo-primary output port class
+class p_primary_output_port : public input_port{
+public:
+    p_primary_output_port(wire* _w);
+    node* getInputGate() = delete;
+};
+
 // Primary output port class
 class primary_output_port : public input_port {
 public:

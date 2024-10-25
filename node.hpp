@@ -22,6 +22,7 @@ class node {
 private:
     int node_idx;
     std::vector<input_port*> inputs;
+    std::vector<input_port*> PPI;
     output_port* output;
     std::shared_ptr<operation> op;
     int level;

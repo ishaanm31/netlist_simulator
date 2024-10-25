@@ -35,14 +35,14 @@ int main(){
         cin>>ss;
         if ((ss[0] == 'Q') or (ss[0] == 'q')) break;
         if (ss[0] == 'F') {
-            auto comb_atpg = my_netlist.comb_atpg();
-            for (auto entry: comb_atpg) {
+            auto test_vectors = my_netlist.generate_test_vectors();
+            for (auto entry: test_vectors) {
                 cout<<"Fault: "<<entry.first<<endl;
                 for (auto entry2: entry.second) {
                     cout<<entry2.first<<" <= "<<entry2.second<<endl;
                 }
                 cout<<"xxxxxxxxxxxxxxxxxxxx"<<endl;
-            }
+            }    
         }
         if(ss.size() != my_netlist.myNetlist.inputs.size()){
             cout<<"give corrent amount of inputs\n";

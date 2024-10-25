@@ -155,5 +155,11 @@ wire *input_port::getDriverWire() {
 // Constructor for primary_input_port
 primary_input_port::primary_input_port(wire *_w) : output_port(nullptr, _w) {}
 
+// Constructor for psuedo-primary input port
+p_primary_input_port::p_primary_input_port(wire* _w) : output_port(nullptr, _w){}
+
+// Constructor for psuedo-prinary output port
+p_primary_output_port::p_primary_output_port(wire* _w) : input_port(nullptr,_w){}
+
 // Constructor for primary_output_port
 primary_output_port::primary_output_port(wire *_w) : input_port(nullptr, _w) {}
