@@ -2,7 +2,7 @@
 #include "netlist_parser.hpp"
 #include "netlist.hpp"
 #define _DEBUG 1
-const string fp = "/home/ishaan/Study/VLSI_CAD/complex_circuit.txt";
+const string fp = "/Users/atharvakulkarni/Desktop/IITB/EE677/netlist_simulator/simple_circuit.txt";
 using namespace std;
 // Written by Ishaan, Harshraj, Atharva and Avaneesh
 
@@ -34,8 +34,6 @@ int main(){
         string ss;
         cin>>ss;
         if ((ss[0] == 'Q') or (ss[0] == 'q')) break;
-        my_netlist.refresh();
-        if(ss.size() != my_netlist.myNetlist.inputs.size()){
         if (ss[0] == 'F') {
             auto comb_atpg = my_netlist.comb_atpg();
             for (auto entry: comb_atpg) {
@@ -46,7 +44,7 @@ int main(){
                 cout<<"xxxxxxxxxxxxxxxxxxxx"<<endl;
             }
         }
-        if(ss.size() != my_parser.netlist.inputs.size()){
+        if(ss.size() != my_netlist.myNetlist.inputs.size()){
             cout<<"give corrent amount of inputs\n";
             continue;
         }
