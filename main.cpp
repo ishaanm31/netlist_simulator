@@ -6,6 +6,20 @@ const string fp = "./simple_circuit.txt";
 using namespace std;
 // Written by Ishaan, Harshraj, Atharva and Avaneesh
 
+void print_grouped_test_vectors(const map<set<string>, map<string, int>>& grouped_map) {
+    for (const auto& [faults, test_vector] : grouped_map) {
+        cout << "Faults: ";
+        for (const auto& fault : faults) {
+            cout << fault << " ";
+        }
+        cout << "\nTest Vector:\n";
+        for (const auto& [input, value] : test_vector) {
+            cout << "  " << input << ": " << value << "\n";
+        }
+        cout << "------------------\n";
+    }
+}
+
 int main(){
     cout<<"Assignment 2 of VLSI CAD 2024! \n Combinational Automatic Test Vector Generator using PODEM. \nGive filepath for the netlist.txt"<<endl;
     string filepath;
@@ -36,13 +50,14 @@ int main(){
         if ((ss[0] == 'Q') or (ss[0] == 'q')) break;
         if (ss[0] == 'F') {
             auto test_vectors = my_netlist.generate_test_vectors();
-            for (auto entry: test_vectors) {
-                cout<<"Fault: "<<entry.first<<endl;
-                for (auto entry2: entry.second) {
-                    cout<<entry2.first<<" <= "<<entry2.second<<endl;
-                }
-                cout<<"xxxxxxxxxxxxxxxxxxxx"<<endl;
-            }    
+            // for (auto entry: test_vectors) {
+            //     cout<<"Fault: "<<entry.first<<endl;
+            //     for (auto entry2: entry.second) {
+            //         cout<<entry2.first<<" <= "<<entry2.second<<endl;
+            //     }
+            //     cout<<"xxxxxxxxxxxxxxxxxxxx"<<endl;
+            // }    
+            print_grouped_test_vectors(my_netlist.group_test_vectors(test_vectors));
         }
         if(ss.size() != my_netlist.myNetlist.inputs.size()){
             cout<<"give corrent amount of inputs\n";

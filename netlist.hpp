@@ -90,6 +90,8 @@ private:
     map<string, port*> port_map;
     set<node*> D_frontier;
     int seq_depth;
+    map<string, set<string>> equivalent_port_maping;
+    Netlist original_Netlist;
 
 public:
 
@@ -138,8 +140,9 @@ public:
     
     void print_node_values();
 
+    map<set<string>, map<string, int>> group_test_vectors(const map<string, map<string, int>>& fault_map);
 
     void print_netlist(Netlist n);
 };
 
-#endif // NETLIST_HPP
+#endif //

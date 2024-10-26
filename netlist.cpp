@@ -14,6 +14,7 @@ using namespace std;
 
 
 netlist::netlist(Netlist n) : myNetlist(n) {
+    original_Netlist = n;
     if (!n.ff.empty()){
         cout << "flip-flops in the netlist" << endl;
         seq_depth = getSeqDepth(n);
@@ -78,18 +79,27 @@ netlist::netlist(Netlist n) : myNetlist(n) {
             gates.push_back(gate);
 
             vector<input_port*> inp_ports = gate->getInputPorts();
-            int idx = 0;
+            int id = 0;
             for (auto inp_port: inp_ports) {
                 string s = "GID:";
+                string p = s;
                 s += (to_string(gate->getIndex()));
+                p += to_string(gate->getIndex() % (original_Netlist.gates.size()));
                 s += ("ip:");
-                s += (to_string(idx++));
+                p += "ip:";
+                p += to_string(id);
+                s += (to_string(id++));
                 port_map[s] = inp_port;
+                equivalent_port_maping[p].insert(s);
             }
             string s = "GID:";
+            string p = s;
             s += (to_string(gate->getIndex()));
+            p += to_string(gate->getIndex() % (original_Netlist.gates.size()));
+            p += "op";
             s += ("op");
             port_map[s] = gate->getOutputPort();
+            equivalent_port_maping[p].insert(s);
         }
         }
     else {
@@ -231,77 +241,95 @@ void netlist::display_output() const {
     }
 }
 
-    map<string, map<string, int>> netlist::generate_test_vectors(){
+// Function to check if two test vectors are compatible and can be merged
+bool are_compatible(const map<string, int>& tv1, const map<string, int>& tv2) {
+    for (const auto& [input, value1] : tv1) {
+        int value2 = tv2.at(input);
+        if (value1 != -1 && value2 != -1 && value1 != value2) {
+            return false; // Incompatible if both values are defined and different
+        }
+    }
+    return true;
+}
+
+// Function to merge two compatible test vectors
+map<string, int> merge_test_vectors(const map<string, int>& tv1, const map<string, int>& tv2) {
+    map<string, int> merged;
+    for (const auto& [input, value1] : tv1) {
+        int value2 = tv2.at(input);
+        merged[input] = (value1 != -1) ? value1 : value2;
+    }
+    return merged;
+}
+
+map<set<string>, map<string, int>> netlist::group_test_vectors(const map<string, map<string, int>>& fault_map) {
+    map<set<string>, map<string, int>> grouped_map;
+    vector<bool> used(fault_map.size(), false);
+    auto fault_it = fault_map.begin();
+
+    for (size_t i = 0; i < fault_map.size(); ++i, ++fault_it) {
+        if (used[i]) continue;
+
+        set<string> compatible_faults = { fault_it->first };
+        map<string, int> merged_test_vector = fault_it->second;
+        used[i] = true;
+
+        auto inner_it = fault_map.begin();
+        for (size_t j = 0; j < fault_map.size(); ++j, ++inner_it) {
+            if (i != j && !used[j] && are_compatible(merged_test_vector, inner_it->second)) {
+                merged_test_vector = merge_test_vectors(merged_test_vector, inner_it->second);
+                compatible_faults.insert(inner_it->first);
+                used[j] = true;
+            }
+        }
         
-        return comb_atpg();
-        // if(seq_depth == 0) return comb_atpg();
-        // else return seq_atpg();
+        grouped_map[compatible_faults] = merged_test_vector;
+    }
+
+    return grouped_map;
+}
+
+
+map<string, map<string, int>> netlist::generate_test_vectors(){        
+//        return comb_atpg();
+        if(seq_depth == 0) return comb_atpg();
+        else return seq_atpg();
     }
 
 map<string, map<string, int>> netlist::seq_atpg() {
-    map<string, map<string, int>> TestVectors, TestVectors_temp;
-    // string s;
-    // // iterate over all primary inputs
-    // std::set<std::string> og_inputs;
-    // for (const auto& [key, value] : input_signals) {
-    //     auto pos = key.find('_');
-    //     if (pos != std::string::npos) {
-    //         og_inputs.insert(key.substr(0, pos));
-    //     }
-    // }
+    map<string, map<string, int>> TestVectors ;
+    for (auto stuck_port_entry: equivalent_port_maping) {
+        string port_name = stuck_port_entry.first;
+        set<port*> equivalent_ports;
+        for (auto eq_port: stuck_port_entry.second) {
+            equivalent_ports.insert(port_map[eq_port]);
+        }
 
-    // for(auto p: og_inputs) {
-    //     // Print e.g. 
-    //     // Fault: PI:A | SA1 | Obtained at TF:i
-    //     s = p.first;
-    //     s += (" | SA0 ");
-    //     this->refresh();
-    //     p.second->setStuckAtFault(0);
-    //     // iterate over time frames from 1 to seq_depth-1
-    //     for(int i = 1; i < seq_depth; i++) {
-    //         simulate();
-    //         map<string, int> TestVector;
-    //         cout<<"Finding Test vector for fault: "<<s<<endl;
-    //         bool testable = podem_recursion(p.second);
-    //         for(auto pi: input_signals) {
-    //             if (testable)
-    //                 TestVector[pi.first] = pi.second->getFaultFreeValue();
-    //             else
-    //             TestVector[pi.first] = -1;
-
-    //         }
-    //         TestVectors[s] = TestVector;
-    //         cout<<"Found TV: "<<s<<" -> ";
-    //         for(auto t: TestVector){
-    //             cout<<t.second<<", ";
-    //         }
-    //         cout<<endl;
-    //         s = p.first;
-    //         s += ("|SA1");
-    //         this->refresh();
-    //         p.second->setStuckAtFault(1);
-    //         simulate();
-    //         TestVector.clear();
-    //         cout<<"Finding Test vector for fault: "<<s<<endl;
-    //         testable = podem_recursion(p.second);
-    //         for(auto pi: input_signals) {
-    //             if (testable)
-    //                 TestVector[pi.first] = pi.second->getFaultFreeValue();
-    //             else
-    //             TestVector[pi.first] = -1;
-
-    //         }
-    //         TestVectors[s] = TestVector;
-    //         cout<<"Found TV: "<<s<<" -> ";
-    //         for(auto t: TestVector){
-    //             cout << t.second<<", ";
-    //         }
-    //         cout<<endl;    
-    //     }
+        for (int i = 0; i < 2; i++) {
+            // Stucking all the equivalent ports at i
+            string s = port_name + " | SA:"+ to_string(i);
+            cout<<"Finding Test vector for fault: "<<s<<endl;
+            bool testable = false;
+            for(auto stuck_port: equivalent_ports) {
+                refresh();
+                for (auto p: equivalent_ports) {
+                    p->setStuckAtFault(i);
+                }
+                simulate();
+                testable = podem_recursion(stuck_port);
+                if (testable) break; 
+            }
+            map<string, int> TestVector;
+            for(auto pi: input_signals) {
+                if (testable)
+                    TestVector[pi.first] = pi.second->getFaultFreeValue();
+                else
+                    TestVector[pi.first] = -1;
+            }
+            TestVectors[s] = TestVector;
+        }
         
-        // then over all gates (inputs and outputs)
-        // then over all primary outputs
-    // }
+    }
     return TestVectors;
 }
 
@@ -526,10 +554,12 @@ void netlist::unroll() {
         for(auto j : myNetlist.inputs){
             string str_ = string("_")+(to_string(i));
             unrolled_netlist.inputs.push_back(j+(str_));
+            equivalent_port_maping["PI:"+j].insert("PI:"+j+(str_));
         }
         for(auto j : myNetlist.outputs){
             string str_ = string("_")+(to_string(i));
             unrolled_netlist.outputs.push_back(j+(str_));
+            equivalent_port_maping["PO:"+j].insert("PO:"+j+(str_));
         }
         for(auto j : myNetlist.gates){
             Gate g;
