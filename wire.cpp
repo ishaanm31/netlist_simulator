@@ -34,7 +34,7 @@ p_primary_input_port* wire::createDriverPort_() {
         exit(1);
     }
     driver_port = new p_primary_input_port(this);
-    return (p_primary_input_port*)driver_port;
+    return (p_primary_input_port*) driver_port;
 }
 
 output_port* wire::getDriverPort() {
@@ -94,7 +94,7 @@ bool wire::updateLevel() {
 vector<node*> wire::getDependentGates() {
     vector<node*> V;
     for (auto inp: driven_ports) {
-        if (dynamic_cast<primary_output_port*>(inp))
+        if ((dynamic_cast<primary_output_port*>(inp)) or (dynamic_cast<p_primary_output_port*>(inp)))
             continue;
         V.push_back(inp->getInputGate());
     }

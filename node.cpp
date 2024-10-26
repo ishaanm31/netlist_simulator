@@ -39,7 +39,6 @@ std::vector<node*> node::eval() {
         input_vec_f_free.push_back(fault_free_value);
         input_vec_f.push_back(fault_value);
     }
-
     // Evaluate new output values
     int new_f_free = (*op)(input_vec_f_free);
     int new_f = (*op)(input_vec_f);

@@ -123,8 +123,8 @@ public:
     // bool X_path_check(port* stuck_port);
 
     pair<primary_input_port*, int> backtrace(pair<port*, int> objective);
-    pair<primary_input_port*, int> backtrace2(pair<port*, int> objective);
-    pair<primary_input_port*, int> backtrace_recursive(pair<port*, int> objective);
+    // pair<primary_input_port*, int> backtrace2(pair<port*, int> objective);
+    // pair<primary_input_port*, int> backtrace_recursive(pair<port*, int> objective);
     bool podem_recursion(port* stuck_port);
 
     pair<port*, int> getObjective(port* stuck_port);

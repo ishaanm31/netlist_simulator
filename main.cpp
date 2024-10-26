@@ -2,7 +2,7 @@
 #include "netlist_parser.hpp"
 #include "netlist.hpp"
 #define _DEBUG 1
-const string fp = "/Users/atharvakulkarni/Desktop/IITB/EE677/netlist_simulator/simple_circuit.txt";
+const string fp = "./simple_circuit.txt";
 using namespace std;
 // Written by Ishaan, Harshraj, Atharva and Avaneesh
 

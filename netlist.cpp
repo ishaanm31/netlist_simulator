@@ -94,58 +94,58 @@ netlist::netlist(Netlist n) : myNetlist(n) {
         }
     else {
 
-    // Populating wire map for internal signals
-    seq_depth = 0;
-    for (string x: myNetlist.wires) {
-        wire *w = new wire(x);
-        wire_map[x] = w;
-    }
-
-    // Populating wire map and primary input signals
-    for (string x: myNetlist.inputs) {
-        wire *w = new wire(x);
-        wire_map[x] = w;
-        primary_input_port* PI_port = w->createDriverPort();
-        input_signals[x] = PI_port;
-        string s ="PI:";
-        s += (x);
-        port_map[s] = PI_port;
-    }
-
-    // Populating wire map and primary output signals (should use outputs, not inputs)
-    for (string x: myNetlist.outputs) {
-        wire *w = new wire(x);
-        wire_map[x] = w;
-        primary_output_port* PO_port = w->createDrivenPort();
-        output_signals[x] = PO_port;
-        string s ="PO:";
-        s += (x);
-        port_map[s] = PO_port;
-    }
-    // Creating gates and connecting wires
-    int idx = 0;
-    for (Gate g: myNetlist.gates) {
-        vector<wire*> g_inp;
-        for (string inp: g.inputs) {
-            g_inp.push_back(wire_map[inp]);
+        // Populating wire map for internal signals
+        seq_depth = 0;
+        for (string x: myNetlist.wires) {
+            wire *w = new wire(x);
+            wire_map[x] = w;
         }
-        node *gate = new node(idx++, g_inp, wire_map[g.output], g.type);
-        gates.push_back(gate);
 
-        vector<input_port*> inp_ports = gate->getInputPorts();
+        // Populating wire map and primary input signals
+        for (string x: myNetlist.inputs) {
+            wire *w = new wire(x);
+            wire_map[x] = w;
+            primary_input_port* PI_port = w->createDriverPort();
+            input_signals[x] = PI_port;
+            string s ="PI:";
+            s += (x);
+            port_map[s] = PI_port;
+        }
+
+        // Populating wire map and primary output signals (should use outputs, not inputs)
+        for (string x: myNetlist.outputs) {
+            wire *w = new wire(x);
+            wire_map[x] = w;
+            primary_output_port* PO_port = w->createDrivenPort();
+            output_signals[x] = PO_port;
+            string s ="PO:";
+            s += (x);
+            port_map[s] = PO_port;
+        }
+        // Creating gates and connecting wires
         int idx = 0;
-        for (auto inp_port: inp_ports) {
+        for (Gate g: myNetlist.gates) {
+            vector<wire*> g_inp;
+            for (string inp: g.inputs) {
+                g_inp.push_back(wire_map[inp]);
+            }
+            node *gate = new node(idx++, g_inp, wire_map[g.output], g.type);
+            gates.push_back(gate);
+
+            vector<input_port*> inp_ports = gate->getInputPorts();
+            int idx = 0;
+            for (auto inp_port: inp_ports) {
+                string s = "GID:";
+                s += (to_string(gate->getIndex()));
+                s += ("ip:");
+                s += (to_string(idx++));
+                port_map[s] = inp_port;
+            }
             string s = "GID:";
             s += (to_string(gate->getIndex()));
-            s += ("ip:");
-            s += (to_string(idx++));
-            port_map[s] = inp_port;
+            s += ("op");
+            port_map[s] = gate->getOutputPort();
         }
-        string s = "GID:";
-        s += (to_string(gate->getIndex()));
-        s += ("op");
-        port_map[s] = gate->getOutputPort();
-    }
     }
     print_netlist(myNetlist);
     levelize();  // Levelize the circuit (evaluate levels)
@@ -183,6 +183,12 @@ void netlist::refresh() {
     for (auto port_pair: port_map) {
         port_pair.second->refresh();
     }
+    for (auto ppi_pair: ppi_signals) {
+        ppi_pair.second->refresh();
+    }
+    for (auto ppo_pair: ppo_signals) {
+        ppo_pair.second->refresh();
+    }
     // Resimulate after refresh
     simulate();
 }
@@ -206,7 +212,6 @@ void netlist::simulate() {
             D_frontier.insert(x);
         }
     }
-        
 }
 
 void netlist::setPI(string PI_name, int val) {
@@ -228,7 +233,7 @@ void netlist::display_output() const {
 
     map<string, map<string, int>> netlist::generate_test_vectors(){
         
-        comb_atpg();
+        return comb_atpg();
         // if(seq_depth == 0) return comb_atpg();
         // else return seq_atpg();
     }
@@ -356,7 +361,7 @@ map<string, map<string, int>> netlist::comb_atpg() {
 // Function to backtrace and assign PIs
 pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
     output_port* current_port;
-    cout<<"backtrace"<<endl;
+    cout<<"backtrace with objective: "<<objective.second<<endl;
     if(!(current_port = dynamic_cast<output_port*> (objective.first)))
         current_port = (dynamic_cast<input_port*> (objective.first))->getDriverWire()->getDriverPort();
         // if current_port is PI, we are done
@@ -369,11 +374,12 @@ pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
         return {p, objective.second};
     }
     else if(p_primary_input_port* p = dynamic_cast<p_primary_input_port*> (current_port)){
+        cout<<"came here 1"<<endl;
         for( auto x: ppi_signals) {
             if (x.second == p)
                 cout<<"Backtraced P_PI: "<<x.first<<" Value: "<<(objective.second)<<endl;
         }
-        // cout<<"Backtraced to P_PI"<<endl;
+        cout<<"came here 2"<<endl;
         return {NULL, objective.second};
     }
     else {
@@ -381,8 +387,7 @@ pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
             if(gate_ip->getFaultFreeValue() == -1) {
                 int inv_parity = (current_port->getDriverGate()->getInversionParity() + objective.second )% 2;
                 cout<<"back back with num_inv: "<<inv_parity<<endl;
-                current_port = gate_ip->getDriverWire()->getDriverPort();
-                auto result = backtrace({current_port, inv_parity});
+                auto result = backtrace({gate_ip->getDriverWire()->getDriverPort(), inv_parity});
                 if (result.first != NULL) return result;
             }
         }
@@ -403,22 +408,22 @@ bool netlist::podem_recursion(port* stuck_port) {
     if (obj.first == NULL) return false; // D frontier is empty;
     // cout<<"hi3"<<endl;
     pair<primary_input_port*, int> pi_value = backtrace(obj);
-    // cout<<"hi4"<<endl;
+    if (pi_value.first == NULL) return false;
+    cout<<"hi4"<<endl;
     pi_value.first->setFaultFreeValue(pi_value.second);
     pi_value.first->setFaultValue(pi_value.second);
-    // cout<<"hi5"<<endl;
+    cout<<"hi5"<<endl;
     simulate();
-    print_node_values();
+    cout<<"hi6"<<endl;
+    // print_node_values();
     bool result = podem_recursion(stuck_port);
     if(result) {
-        for (auto x : port_map) {
-            if (x.second == stuck_port){
-                cout << "stuck_port: " << x.first << endl;
-                break;
-            }
-
-        }
-        
+        // for (auto x : port_map) {
+        //     if (x.second == stuck_port){
+        //         cout << "stuck_port: " << x.first << endl;
+        //         break;
+        //     }
+        // }
         return true;
     }
     pi_value.second = (pi_value.second+1)%2;
@@ -426,6 +431,9 @@ bool netlist::podem_recursion(port* stuck_port) {
     pi_value.first->setFaultValue(pi_value.second);
     simulate();
     result = podem_recursion(stuck_port);
+    if (result) {
+        return true;
+    }
     pi_value.second = -1;
     pi_value.first->setFaultFreeValue(pi_value.second);
     pi_value.first->setFaultValue(pi_value.second);
@@ -526,7 +534,7 @@ void netlist::unroll() {
         for(auto j : myNetlist.gates){
             Gate g;
             g.output = j.output+(string("_")+(to_string(i)));
-            g.type = j.type+(string("_TF")+(to_string(i)));
+            g.type = j.type;
             for(auto k : j.inputs){
                 if (PPO_PPI_map.find(k) != PPO_PPI_map.end()){
                     if(i != 0){
@@ -555,7 +563,6 @@ void netlist::unroll() {
         }
     }
     myNetlist = unrolled_netlist;
-
 }
 netlist::~netlist() {
     // Destructor: Clean up dynamically allocated memory
