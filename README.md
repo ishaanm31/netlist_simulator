@@ -3,7 +3,7 @@
 - Ishaan Manhar, 210070033
 - Harshraj Chaudhari, 210040060
 - Atharva Kulkarni, 210070047
-- Avaanesh Sai, 210070015
+- Avaneesh Sai, 210070015
 
 ## Overview
 
