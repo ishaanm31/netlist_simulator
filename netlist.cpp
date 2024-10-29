@@ -334,38 +334,25 @@ map<string, map<string, int>> netlist::seq_atpg() {
 
 map<string, map<string, int>> netlist::comb_atpg() {
     // Populating all ports for which we will be calculating 
-    map<string, map<string, int>> TestVectors;
+map<string, map<string, int>> TestVectors;
     for (auto p: port_map) {
-        string s = p.first;
-        s += ("|SA0");
-        this->refresh();
-        p.second->setStuckAtFault(0);
-        simulate();
-        map<string, int> TestVector;
-        bool testable = podem_recursion(p.second);
-        for(auto pi: input_signals) {
-            if (testable)
-                TestVector[pi.first] = pi.second->getFaultFreeValue();
-            else
-               TestVector[pi.first] = -1;
-
-        }
-        TestVectors[s] = TestVector;
-        s = p.first;
-        s += ("|SA1");
-        this->refresh();
-        p.second->setStuckAtFault(1);
-        simulate();
-        TestVector.clear();
-        testable = podem_recursion(p.second);
-        for(auto pi: input_signals) {
-            if (testable)
-                TestVector[pi.first] = pi.second->getFaultFreeValue();
-            else
-               TestVector[pi.first] = -1;
-
-        }
-        TestVectors[s] = TestVector;
+        for (int i = 0; i < 2; i++){
+            string s = p.first;
+            s += (" | SA") + to_string(i);
+            this->refresh();
+            p.second->setStuckAtFault(0);
+            simulate();
+            map<string, int> TestVector;
+            bool testable = podem_recursion(p.second);
+            for(auto pi: input_signals) {
+                if (testable)
+                    TestVector[pi.first] = pi.second->getFaultFreeValue();
+                else
+                    TestVector[pi.first] = -1;
+            }
+            TestVectors[s] = TestVector;
+            
+        }  
     }
     return TestVectors;
 }
