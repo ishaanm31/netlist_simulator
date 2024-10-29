@@ -308,7 +308,6 @@ map<string, map<string, int>> netlist::seq_atpg() {
         for (int i = 0; i < 2; i++) {
             // Stucking all the equivalent ports at i
             string s = port_name + " | SA:"+ to_string(i);
-            cout<<"Finding Test vector for fault: "<<s<<endl;
             bool testable = false;
             for(auto stuck_port: equivalent_ports) {
                 refresh();
@@ -337,16 +336,12 @@ map<string, map<string, int>> netlist::comb_atpg() {
     // Populating all ports for which we will be calculating 
     map<string, map<string, int>> TestVectors;
     for (auto p: port_map) {
-        // dont check for faults at PPIs (at TF-1) and PPOs (at last TF)
-        // if((dynamic_cast<p_primary_input_port*>(p.second)) || (dynamic_cast<p_primary_output_port*>(p.second))) continue;
         string s = p.first;
         s += ("|SA0");
         this->refresh();
-        cout<<"hey"<<endl;
         p.second->setStuckAtFault(0);
         simulate();
         map<string, int> TestVector;
-        cout<<"Finding Test vector for fault: "<<s<<endl;
         bool testable = podem_recursion(p.second);
         for(auto pi: input_signals) {
             if (testable)
@@ -356,18 +351,12 @@ map<string, map<string, int>> netlist::comb_atpg() {
 
         }
         TestVectors[s] = TestVector;
-        cout<<"Found TV: "<<s<<" -> ";
-        for(auto t: TestVector){
-            cout<<t.second<<", ";
-        }
-        cout<<endl;
         s = p.first;
         s += ("|SA1");
         this->refresh();
         p.second->setStuckAtFault(1);
         simulate();
         TestVector.clear();
-        cout<<"Finding Test vector for fault: "<<s<<endl;
         testable = podem_recursion(p.second);
         for(auto pi: input_signals) {
             if (testable)
@@ -377,11 +366,6 @@ map<string, map<string, int>> netlist::comb_atpg() {
 
         }
         TestVectors[s] = TestVector;
-        cout<<"Found TV: "<<s<<" -> ";
-        for(auto t: TestVector){
-            cout<<t.second<<", ";
-        }
-        cout<<endl;    
     }
     return TestVectors;
 }
@@ -389,32 +373,19 @@ map<string, map<string, int>> netlist::comb_atpg() {
 // Function to backtrace and assign PIs
 pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
     output_port* current_port;
-    cout<<"backtrace with objective: "<<objective.second<<endl;
     if(!(current_port = dynamic_cast<output_port*> (objective.first)))
         current_port = (dynamic_cast<input_port*> (objective.first))->getDriverWire()->getDriverPort();
         // if current_port is PI, we are done
     if(primary_input_port* p = dynamic_cast<primary_input_port*> (current_port)){
-        for( auto x: input_signals) {
-            if (x.second == p)
-                cout<<"Backtraced PI: "<<x.first<<" Value: "<<(objective.second)<<endl;
-        }
-        // cout<<"Backtraced to PI"<<endl;
         return {p, objective.second};
     }
     else if(p_primary_input_port* p = dynamic_cast<p_primary_input_port*> (current_port)){
-        cout<<"came here 1"<<endl;
-        for( auto x: ppi_signals) {
-            if (x.second == p)
-                cout<<"Backtraced P_PI: "<<x.first<<" Value: "<<(objective.second)<<endl;
-        }
-        cout<<"came here 2"<<endl;
         return {NULL, objective.second};
     }
     else {
         for(auto gate_ip: current_port->getDriverGate()->getInputPorts()) {
             if(gate_ip->getFaultFreeValue() == -1) {
                 int inv_parity = (current_port->getDriverGate()->getInversionParity() + objective.second )% 2;
-                cout<<"back back with num_inv: "<<inv_parity<<endl;
                 auto result = backtrace({gate_ip->getDriverWire()->getDriverPort(), inv_parity});
                 if (result.first != NULL) return result;
             }
@@ -424,34 +395,20 @@ pair<primary_input_port*, int> netlist::backtrace(pair<port*, int> objective) {
 }
 
 bool netlist::podem_recursion(port* stuck_port) {
-    // cout<<"hi1"<<endl;
     for(auto po: output_signals) {
         if(po.second->getDvalue() == D || po.second->getDvalue() == D_bar) {
-            cout << "PO was: " << po.first << endl;
             return true;
         }
     }
-    // cout<<"hi2"<<endl;
     pair<port*, int> obj = getObjective(stuck_port);
     if (obj.first == NULL) return false; // D frontier is empty;
-    // cout<<"hi3"<<endl;
     pair<primary_input_port*, int> pi_value = backtrace(obj);
     if (pi_value.first == NULL) return false;
-    cout<<"hi4"<<endl;
     pi_value.first->setFaultFreeValue(pi_value.second);
     pi_value.first->setFaultValue(pi_value.second);
-    cout<<"hi5"<<endl;
     simulate();
-    cout<<"hi6"<<endl;
-    // print_node_values();
     bool result = podem_recursion(stuck_port);
     if(result) {
-        // for (auto x : port_map) {
-        //     if (x.second == stuck_port){
-        //         cout << "stuck_port: " << x.first << endl;
-        //         break;
-        //     }
-        // }
         return true;
     }
     pi_value.second = (pi_value.second+1)%2;
@@ -471,14 +428,9 @@ bool netlist::podem_recursion(port* stuck_port) {
 
 
 pair<port*, int> netlist::getObjective(port* stuck_port){
-    for (auto x : port_map) {
-        if (x.second == stuck_port)
-            cout << "Get Objective for: " << x.first << endl;
-    }
     if (stuck_port->getStuckAtFault()) {
         if (stuck_port->getFaultFreeValue() == -1) {
             int comp = (stuck_port->getFaultValue() + 1) % 2;
-            // cout<<"Returning activation of :"<<comp<<endl;
             return {stuck_port, comp};
         }
         if (stuck_port->getFaultFreeValue() == stuck_port->getFaultValue()) {
@@ -486,9 +438,7 @@ pair<port*, int> netlist::getObjective(port* stuck_port){
         }
     }
     node *gate = *D_frontier.begin();
-    // cout<<"Dfrontier size: "<<D_frontier.size()<<endl;
     if (D_frontier.size() <= 0) {
-        // cout << "D frontier is empty" << endl;
         return {NULL, -1};
     }
     for (auto x : gate->getInputPorts()){

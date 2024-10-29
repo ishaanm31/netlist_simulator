@@ -1,3 +1,3 @@
 make clean
 make all
-./netlist_simulator
+./seq_atpg

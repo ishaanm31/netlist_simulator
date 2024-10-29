@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall -g
 
 # Executable name
-TARGET = netlist_simulator
+TARGET = seq_atpg
 
 # Source files
 SRCS = main.cpp netlist.cpp netlist_parser.cpp node.cpp operation.cpp port.cpp wire.cpp
